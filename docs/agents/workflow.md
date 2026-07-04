@@ -50,11 +50,13 @@ Defined in `.claude/agents/`. Delegate; don't do easy work in the main context.
 
 | Agent | Model | When |
 |---|---|---|
-| `scout` | haiku | easy read-only lookups, searches, sanity peeks |
-| `data-qa` | haiku | easy recurring dataset checks: schema validation, split leakage (brief §8.6), label stats |
-| `builder` | sonnet | medium implementation issues — always via `/tdd` for non-trivial logic |
-| `writer` | sonnet | medium prose: laporan/paper sections (Indonesian), grounded to `experiments/` results |
+| `scout` | sonnet | easy read-only lookups, searches, sanity peeks |
+| `data-qa` | sonnet | easy recurring dataset checks: schema validation, split leakage (brief §8.6), label stats |
+| `builder` | opus | medium implementation issues — always via `/tdd` for non-trivial logic |
+| `writer` | opus | medium prose: laporan/paper sections (Indonesian), grounded to `experiments/` results |
 | `researcher` | opus | hard issues: design decisions, error analysis, anything that ends in an ADR |
+
+Model policy: **no haiku** — easy → Sonnet, medium/hard → Opus.
 
 Rules of thumb:
 - An issue marked `ready-for-agent` must be executable by the routed agent **with no human context** — if it isn't, it's `needs-triage` again.

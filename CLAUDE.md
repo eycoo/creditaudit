@@ -44,11 +44,13 @@ Full loop in `docs/agents/workflow.md`: `/grill-me` → `/to-prd` → `/to-issue
 
 | Difficulty | Agent (`.claude/agents/`) | Model |
 |---|---|---|
-| easy (lookups) | `scout` | haiku |
-| easy (dataset checks) | `data-qa` | haiku |
-| medium (code, via /tdd) | `builder` | sonnet |
-| medium (Indonesian prose) | `writer` | sonnet |
+| easy (lookups) | `scout` | sonnet |
+| easy (dataset checks) | `data-qa` | sonnet |
+| medium (code, via /tdd) | `builder` | opus |
+| medium (Indonesian prose) | `writer` | opus |
 | hard (design/analysis) | `researcher` | opus |
+
+Model policy: no haiku anywhere — easy → Sonnet, medium/hard → Opus.
 
 ## Memory
 
