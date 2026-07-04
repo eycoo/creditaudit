@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# data artifacts — regenerable (synthetic/processed) or private (raw screenshots, PII)
+data/raw/*
+data/synthetic/*
+data/processed/*
+!data/raw/.gitkeep
+!data/synthetic/.gitkeep
+!data/processed/.gitkeep
+
+# training artifacts
+wandb/
+*.ckpt
+*.safetensors
+
+# scratch temp files
+.scratch/**/tmp*
