@@ -4,22 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-Research project scaffolded from `project_brief.md` — a ~500-line brief written in **Indonesian** for a
-multimodal system that audits Indonesian digital-credit offers (pinjol, paylater, installment tables) to
-reveal true cost and detect misleading fee framing. Phase-1 code lives in `src/creditaudit/` (extraction
-schema, deterministic calculator, OJK rule engine); later phases (dataset pipeline, model training) are
-tracked as issues in `.scratch/`.
+Research project scaffolded from `project_brief.md` — a brief written in **Indonesian** for **GEAR-TS**:
+grounded, token-efficient, verifiable LLM reasoning over **time series**. An LLM emits reasoning as a
+sequence of *operations* over a numeric series; a **deterministic verifier** recomputes each operation on
+the original series and checks the claimed number. Phase-1 code lives in `src/gearts/` (JSONL schema,
+operation library, verifier, metrics); later phases (data scraping, synthesis, model training) are tracked
+as issues in `.scratch/`.
 
-Domain labels are Indonesian and canonical. Keep taxonomy codes, JSON field names, and label strings
-**exactly** as the brief spells them (code and data key on them) — the schema is implemented in
-`src/creditaudit/schema.py` (mirrors Lampiran A); read `CONTEXT.md` for the glossary before naming anything.
+Domain terms are Indonesian and canonical. Keep operation names, JSONL field names, and label strings
+**exactly** as the brief spells them (code and data key on them) — the schema is in `src/gearts/schema.py`
+(mirrors Lampiran A), the operations in `src/gearts/operations.py` (Lampiran C). Read `CONTEXT.md` for the
+glossary before naming anything.
 
 ## Commands
 
 ```bash
-pip install pytest                                   # once
-pytest                                               # full suite
-pytest tests/test_calculator.py::test_lampiran_b -x  # single test
+pip install numpy pytest                                        # once
+pytest                                                          # full suite
+pytest tests/test_verifier.py::test_lampiran_b_full_grounding -x  # single test
 ```
 
 ## Agent skills
@@ -58,70 +60,59 @@ Routing rules in `docs/agents/memory.md`. Short version: decisions → `docs/adr
 `docs/lab-notebook/` (append-only), new domain terms → `CONTEXT.md`, work to do → `.scratch/` issues,
 session end → `/handoff`. Project facts always in-repo; harness memory only for user preferences.
 
-## Planned architecture (the load-bearing design)
+## Architecture (the load-bearing design)
 
-A **modular pipeline, deliberately not a monolithic VLM.** The core methodological claim: arithmetic is
-offloaded to a deterministic calculator because LLMs are unreliable at arithmetic, so audited cost figures
-stay accountable. Four sequential modules (`project_brief.md` §10):
+**Two separate components, not a monolithic LLM** (ADR-0001). The core claim: an LLM is unreliable at
+arithmetic, so it never owns the numbers — it proposes operations, and an external deterministic program
+computes and checks them, keeping reasoning auditable (`project_brief.md` §8).
 
 ```
-offer image
-  → M1 Perception/Extraction (VLM, Qwen2.5-VL-7B) → JSON financial terms
-  → M2 Quantitative Reasoning (reasoning model + calculator) → true effective cost
-  → M3 Classification + OJK Compliance → misleading labels + violation flags + severity
-  → M4 Explanation Generation (same reasoning model) → plain-Indonesian summary
-  → structured audit report
+numeric series + question
+  → LLM (fine-tuned, Qwen2.5-7B class) emits reasoning as a sequence of operations
+  → deterministic verifier recomputes each operation on the original series
+  → compares recomputed vs claimed (within tolerance) → grounding score + validated reasoning
+  → final answer
 ```
 
-- **M2 uses program-of-thought, not plain chain-of-thought:** the model emits a structured calculation
-  plan referencing extracted fields; a **deterministic Python calculator executes it.** The dataset teaches
-  correct reasoning *structure*; the calculator guarantees correct arithmetic. Both are required — this
-  split is the whole point, don't collapse it back into an end-to-end LLM.
-- **M3 compliance is rule-based and untrained** (deterministic OJK rule engine); only the misleading-label
-  classifier is learned.
-- **M4 explanations must be grounded to calculator numbers** so they cannot fabricate figures.
+- **Reasoning is operation-form, not free prose (ADR-0002).** Each step names an operation from the fixed
+  library (`operations.py`); the **verifier** (`verifier.py`) re-executes it. The dataset teaches reasoning
+  *structure*; the verifier guarantees the arithmetic. Both required — don't collapse into an end-to-end LLM.
+- **The verifier is the single source of grounding truth**, used in three places: dataset cleaning
+  (drop steps that don't verify), evaluation (grounding score), and optionally as an RL reward.
+- **Adaptive reasoning length** is the token-efficiency mechanism: clear series → short reasoning,
+  ambiguous → long (SelfBudgeter idea brought to time series).
 
-## Hard domain constants (these drive the rule engine and labels)
+## Key facts (drive the code)
 
-**OJK compliance thresholds** (M3 rule engine flags violations — verify against current regulation before
-relying on them; the brief marks them as versioned):
-- Consumptive-loan interest cap: **0.1% per day** (phased target for 2026). Rate above this → flag.
-- Lock cap: **total repayment ≤ 100% of principal**. Denda + bunga exceeding 100% of pokok → flag.
-- Paylater transparency obligations: POJK 32/2025.
+- **Grounding score** (main metric, `project_brief.md` §14): % of scalar reasoning steps whose recomputed
+  value matches the claimed one. A step grounds if `|recomputed − claimed| ≤ max(abs_tol, rel_tol·|recomputed|)`.
+  The relative term is a **calibration knob** — it lets a presented `105.3` pass against a recomputed `105.26`
+  while a real magnitude error (`30` vs `105`) fails. Defaults `abs_tol=rel_tol=0.01`.
+- **Operation library** (`operations.py`, Lampiran C): `rata2`, `delta`, `persen_naik`, `rasio`, `slope`,
+  `min`/`max`, `z_score`, `deteksi_anomali`, `bandingkan_segmen`. `deteksi_anomali`/`bandingkan_segmen` have
+  provisional semantics — finalized by issue `01-finalisasi-pustaka-operasi` (`# ponytail` markers in code).
+- **Three metrics**, all deterministic (no LLM judge): answer accuracy, grounding score, token efficiency.
 
-**Misleading-fee taxonomy** — **multi-label and hierarchical** (one offer can carry several). P1–P6 are
-cost-misleading categories; R1 is a separate legality red flag:
+## Dataset pipeline (the primary contribution — `project_brief.md` §9)
 
-| Code | Category |
-|---|---|
-| P1 | Misrepresentasi suku bunga (interest framing) |
-| P2 | Biaya siluman (hidden fees / upfront cuts) |
-| P3 | Salah basis perhitungan denda (penalty base error) |
-| P4 | Penyamaran struktur cicilan (installment disguise) |
-| P5 | Framing visual menyesatkan (visual — realized at image-render time) |
-| P6 | Klaim palsu atau bait (false "0% / no fee" claims) |
-| R1 | Indikator ilegalitas (illegality red flag) |
+- **Numeric series** scraped from real Indonesian public sources: PIHPS/Bank Indonesia (food prices),
+  Kemenkes dashboards (disease cases), BMKG (weather), open energy load. Not Kaggle datasets.
+- **Reasoning layer (the moat, the laborious part):** for each series, pose a question, compute the correct
+  answer by formula, and synthesize operation-form reasoning **whose every number the verifier checks** —
+  steps that don't verify are fixed or dropped, so labels are clean by construction.
+- **Semi-synthetic for scale, real for test:** train mostly semi-synthetic (real or controlled series +
+  auto-verified reasoning); **test mostly real series** to prove field generalization. Stratified by task
+  and difficulty; anti-leakage — test sources must not appear in train (§9.4).
+- **Format:** JSONL, one sample per line (Lampiran A). Read/write via `gearts.schema`.
 
-## Dataset pipeline (the primary contribution)
+## Planned stack (`project_brief.md` §19)
 
-Two complementary sources (`project_brief.md` §8):
-- **Synthetic via CoT-injection:** parametric offer templates → distill correct step-by-step CoT →
-  **verify cost with the deterministic calculator** → apply misleading presentation transforms per the
-  taxonomy (Lampiran C) that keep the hidden truth computable → emit labeled tuples (offer text, ground-truth
-  terms, ground-truth true cost, misleading labels, compliance status, reference CoT). Labels follow the
-  transform applied, so they are automatic and exact.
-- **Real via scraping** (Play Store, social media, promo material) → manual annotation by ≥2 annotators with
-  Cohen/Fleiss kappa → **blur all PII before processing.**
-- **Synthetic image rendering** (PIL/Pillow template bank): renders synthetic text into realistic offer
-  images so visual misleading (P5) is spatially real.
-- **Splits:** train mostly synthetic, **test mostly real** (measures field generalization); stratified by
-  misleading category and legality; anti-leakage — test templates/sources must not appear in train.
+Model `Qwen2.5-7B` fine-tuned · Training `LLaMA-Factory` + `DeepSpeed ZeRO-2` + `PEFT`, **QLoRA** NF4 4-bit
+(r 16–64, alpha 32, lr 1e-4–2e-4, cosine+warmup, bf16, 2–3 epochs) · Verifier plain Python + `NumPy`
+(untrained) · optional Time-LLM-style series encoder for long series · Scraping `Playwright`/`Selenium` +
+official source APIs · Logging `Weights & Biases` · Hardware T4/V100 (Colab/Kaggle). Optional extension: RL
+with verifiable grounding reward.
 
-## Planned stack (`project_brief.md` §18)
-
-Perception `Qwen2.5-VL-7B-Instruct` · Reasoning `Qwen2.5-7B` fine-tuned (IndoMathReason base) · Training
-`LLaMA-Factory` + `DeepSpeed ZeRO-2` + `PEFT`, **QLoRA** NF4 4-bit (r 16–64, alpha 32, dropout 0.05, lr
-1e-4–2e-4, cosine+warmup, bf16, 2–3 epochs) · OCR fallback `PaddleOCR` · Scraping `Playwright`/`Selenium` ·
-Annotation `Label Studio` · Serving `FastAPI` · Logging `Weights & Biases` · Hardware T4/V100 (Colab/Kaggle).
-
-The deterministic **calculator** and **OJK rule engine** are plain Python, not trained.
+Comparators (`project_brief.md` §7): **VeriTime** (verifiable TS reasoning — main baseline), **SelfBudgeter**
+(adaptive token budget), **MTBench** (framing). Our wedge: verifiable **plus** token-efficient, on a
+self-built Indonesian dataset.

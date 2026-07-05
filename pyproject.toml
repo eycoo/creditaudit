@@ -1,9 +1,9 @@
 [project]
-name = "creditaudit"
+name = "gear-ts"
 version = "0.1.0"
-description = "Multimodal audit of Indonesian digital-credit offers: true-cost computation and misleading-fee detection"
+description = "GEAR-TS: grounded, verifiable, token-efficient LLM reasoning over time series"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["numpy"]
 
 [project.optional-dependencies]
 dev = ["pytest"]

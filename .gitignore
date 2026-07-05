@@ -4,7 +4,7 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# data artifacts — regenerable (synthetic/processed) or private (raw screenshots, PII)
+# data artifacts — regenerable (synthetic/processed) or bulky raw scraped series
 data/raw/*
 data/synthetic/*
 data/processed/*

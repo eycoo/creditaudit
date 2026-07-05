@@ -7,7 +7,7 @@ This is a **single-context repo**: one `CONTEXT.md` at the root, ADRs in `docs/a
 ## Before exploring, read these
 
 - **`CONTEXT.md`** at the repo root — the domain glossary (ubiquitous language). Indonesian domain terms are canonical.
-- **`docs/adr/`** — read ADRs that touch the area you're about to work in. ADR-0001 (modular pipeline) and ADR-0002 (program-of-thought + deterministic calculator) constrain almost all code in `src/`.
+- **`docs/adr/`** — read ADRs that touch the area you're about to work in. ADR-0001 (model + external verifier) and ADR-0002 (operation-constrained reasoning + deterministic verifier) constrain almost all code in `src/`.
 
 ## Use the glossary's vocabulary
 
@@ -19,4 +19,4 @@ If the concept you need isn't in the glossary yet, that's a signal — either yo
 
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
-> _Contradicts ADR-0002 (deterministic calculator) — but worth reopening because…_
+> _Contradicts ADR-0002 (deterministic verifier) — but worth reopening because…_

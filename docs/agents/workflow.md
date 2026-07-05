@@ -40,9 +40,9 @@ How work flows through this repo: skills drive the process, sub-agents execute b
 
 | Difficulty | Test | Examples from this project |
 |---|---|---|
-| `easy` | Answer exists in the repo/data; no judgment, no writes to `src/` | file inventory, label distribution counts, "which samples fail schema validation" |
-| `medium` | Well-specified change; spec says exactly what done looks like | extend calculator for `denda_basis`, preprocessing script, render template variant, a laporan section |
-| `hard` | Requires design judgment or novel analysis; spec describes the problem, not the solution | injection transform design (Lampiran C), PoT output format, ablation analysis, taxonomy revision |
+| `easy` | Answer exists in the repo/data; no judgment, no writes to `src/` | file inventory, task distribution counts, "which samples fail schema validation or grounding" |
+| `medium` | Well-specified change; spec says exactly what done looks like | add an operation to the library, a source scraper into JSONL, a reasoning-synthesis script, a laporan section |
+| `hard` | Requires design judgment or novel analysis; spec describes the problem, not the solution | operation-library semantics (Lampiran C), adaptive-reasoning policy, ablation analysis, positioning vs VeriTime |
 
 ## 2. Execute — sub-agent routing
 
