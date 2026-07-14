@@ -4,12 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-Research project scaffolded from `project_brief.md` — a brief written in **Indonesian** for **GEAR-TS**:
-grounded, token-efficient, verifiable LLM reasoning over **time series**. An LLM emits reasoning as a
-sequence of *operations* over a numeric series; a **deterministic verifier** recomputes each operation on
-the original series and checks the claimed number. Phase-1 code lives in `src/gearts/` (JSONL schema,
-operation library, verifier, metrics); later phases (data scraping, synthesis, model training) are tracked
-as issues in `.scratch/`.
+Research project for the **Gemastik data-mining competition**, scaffolded from `project_brief.md` (a brief
+written in **Indonesian**): grounded, token-efficient, verifiable LLM reasoning over **time series**. An LLM
+emits reasoning as a sequence of *operations* over a numeric series; a **deterministic verifier** recomputes
+each operation on the original series and checks the claimed number. Phase-1 code lives in `src/gearts/`
+(JSONL schema, operation library, verifier, metrics); later phases (data scraping, synthesis, model
+training) are tracked as issues in `.scratch/`; the competition paper lives in `paper/`.
+`PENJELASAN_PROJECT.md` is a plain-language Indonesian explainer derived from the brief + `CONTEXT.md` —
+keep it in sync when framing changes.
+
+**Two names, strict scoping.** The official research title — used in the paper, README, and all
+public-facing prose — is *"Peningkatan Keandalan dan Efisiensi Token LLM pada Data Time Series melalui
+Pendekatan Verifikasi Deterministik"*. **GEAR-TS** is the internal working name only (package `gearts`,
+brief, issues, ADRs) and must **never** appear in paper prose — the paper sells a method, not a product.
 
 Domain terms are Indonesian and canonical. Keep operation names, JSONL field names, and label strings
 **exactly** as the brief spells them (code and data key on them) — the schema is in `src/gearts/schema.py`
@@ -53,6 +60,18 @@ Full loop in `docs/agents/workflow.md`: `/grill-me` → `/to-prd` → `/to-issue
 | hard (design/analysis) | `researcher` | opus |
 
 Model policy: no haiku anywhere — easy → Sonnet, medium/hard → Opus.
+
+## Paper (`paper/`)
+
+Current draft: `Makalah_Gemastik_PenalaranTimeSeries.docx` (the older `GEAR-TS_Makalah_Gemastik.docx`
+predates the title rule). Route paper writing through the `writer` agent — its conventions
+(`.claude/agents/writer.md`) are binding: official title only (never "GEAR-TS"), passive voice
+("diusulkan", not "kami mengusulkan"), the official IEEE template's named styles and 2-column layout
+(`paper/[Template] Makalah Gemastik ieee.docx`, tables ≤ 8.5 cm), numeric citations `[n]` at clause end
+(concept first — not "VeriTime [3] adalah …"), foreign terms in *italics* (model/work names upright).
+
+`arsitektur_sistem.tex` (standalone TikZ, compile with `pdflatex`) is the editable source of the
+`arsitektur_sistem.png` figure embedded in the makalah — edit the .tex, don't touch the PNG by hand.
 
 ## Memory
 

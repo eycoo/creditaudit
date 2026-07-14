@@ -1,4 +1,4 @@
-# GEAR-TS — Grounded, Efficient, Adaptive Reasoning for Time Series
+# Peningkatan Keandalan dan Efisiensi Token LLM pada Data Time Series melalui Pendekatan Verifikasi Deterministik
 
 Research project: make an LLM reason over a numeric **time series** in a way that is **grounded** (every step's number survives recomputation) and **token-efficient** (reasoning length adapts to difficulty). The LLM emits reasoning as a sequence of *operations*; a **deterministic verifier** re-runs each operation on the original series and scores how many claimed numbers actually check out. Full proposal: [`project_brief.md`](project_brief.md) (Indonesian).
 

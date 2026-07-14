@@ -1,4 +1,4 @@
-# Penjelasan Project: GEAR-TS — Penalaran Time Series yang Grounded dan Hemat Token
+# Penjelasan Project: Peningkatan Keandalan dan Efisiensi Token LLM pada Data Time Series melalui Pendekatan Verifikasi Deterministik
 
 Dokumen ini menjelaskan project secara lengkap dan berurutan, mulai dari apa project-nya, latar belakang, masalah, solusi, cara kerja, alasan pemilihan solusi, eksperimen, sampai hal-hal yang dibandingkan. Tiap bagian diberi konteks dulu sebelum masuk ke isi, supaya mudah dipahami tanpa perlu baca dokumen teknis lain.
 
