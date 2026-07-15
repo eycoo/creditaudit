@@ -71,8 +71,8 @@ on `master` and is the **integration point**.
 | ID | Task | Difficulty | Status | Depends | File |
 |---|---|---|---|---|---|
 | F2-01 | Curate 15–30 real test series — code + JSONL **generated** (18 series, gitignored; regen: `pwsh scripts/fetch_wb.ps1` + `python scripts/curate_benchmark_uji.py`) | medium | done | — | [fase-2-benchmark/issues/01](fase-2-benchmark/issues/01-kurasi-deret-uji.md) |
-| F2-02 | Questions + gold answers + shortest-grounded reference reasoning | hard | ready-for-agent | F2-01, F1-01 | [fase-2-benchmark/issues/02](fase-2-benchmark/issues/02-pertanyaan-jawaban-reasoning-acuan.md) |
-| F2-03 | Validate benchmark (schema, grounding sweep, no leakage) | easy | needs-info | F2-01, F2-02 | [fase-2-benchmark/issues/03](fase-2-benchmark/issues/03-validasi-benchmark.md) |
+| F2-02 | Questions + gold answers + shortest-grounded reference reasoning — script + JSONL **generated** (18 sampel, 100% grounded; regen: `python scripts/synthesize_reasoning_acuan.py`) | hard | done | F2-01, F1-01 | [fase-2-benchmark/issues/02](fase-2-benchmark/issues/02-pertanyaan-jawaban-reasoning-acuan.md) |
+| F2-03 | Validate benchmark (schema, grounding sweep, no leakage) | easy | ready-for-agent | F2-01, F2-02 | [fase-2-benchmark/issues/03](fase-2-benchmark/issues/03-validasi-benchmark.md) |
 
 ## Fase 3 — Experiments without fine-tune (RQ1, RQ2) — cheap, Day 1
 
