@@ -30,6 +30,30 @@ The full research arc, start to finish, for the Gemastik project. Every session 
 
 **Startable right now, in parallel, zero collision:** `F1-04` (verifier), `F3-01` (harness), `F4-01` (source inventory), `F6-01` (paper positioning), `F6-02` (verify citations). Plus `F1-01` is a **user decision** that unblocks the most downstream work — do it first.
 
+## Parallel run (4 sessions) — coordination
+
+Four sessions run at once, one per track, each in its own **git worktree** so they never collide on
+files. They share one `.git` and coordinate only through `master`. The **main folder** (`backup_gems`) stays
+on `master` and is the **integration point**.
+
+| Session | Track | Worktree · branch | Wave-0 task (start now) | Waits on |
+|---|---|---|---|---|
+| A | Verifier | `../gems-A` · `track-a` | F1-01 (your decision) + F1-04 | F1-05 ← F1-01 |
+| B | Benchmark | `../gems-B` · `track-b` | F2-01 | F2-02 ← F1-01 + F2-01 |
+| C | Experiments | `../gems-C` · `track-c` | F3-01 | F3-02/03 ← F2-03 + model access |
+| D | Dataset | `../gems-D` · `track-d` | F4-01 → F4-02 | F4-04 ← F1-01 + F4-03 |
+
+**Protocol (every session):**
+
+1. **Claim** — set the issue's `Status: in-progress` before working; flip to `done` here when merged.
+2. **Ship** — issue done + `pytest` green → commit on the track branch.
+3. **Integrate** — from the **main folder** (`backup_gems`, on `master`): `git merge track-x`. Do **not**
+   `git checkout master` inside a worktree — `master` is checked out in the main folder, so it will refuse.
+4. **Sync** — before starting a task whose `Depends:` just cleared, inside the worktree run
+   `git merge master` to pull the finalized upstream work.
+5. **The F1-01 gate** — F1-01 unblocks F2-02, F1-05, and F4-04 across three tracks. The moment it lands on
+   `master`, Sessions A/B/D `git merge master` before touching those. **Do F1-01 first.**
+
 ## Fase 1 — Foundation: verifier + operation library
 
 | ID | Task | Difficulty | Status | Depends | File |
