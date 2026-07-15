@@ -1,8 +1,12 @@
 # Finalisasi pustaka operasi + semantik grounding
 
-Status: ready-for-human
+Status: in-progress
 Difficulty: hard
 Depends: —
+
+> Session A (track-a, 2026-07-15): decision doc prepared as ADR-0003 (Status: Proposed). No code touched.
+> Options + recommendation + trade-offs per provisional item. Final call is the user's; ADR flips to
+> Accepted only after sign-off, then CONTEXT.md / operations.py / tests follow.
 
 ## Problem
 
