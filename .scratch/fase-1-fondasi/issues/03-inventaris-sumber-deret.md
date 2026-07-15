@@ -1,6 +1,6 @@
 # Inventaris sumber deret publik
 
-Status: ready-for-agent
+Status: in-progress
 Difficulty: easy
 Depends: â€”
 
@@ -21,3 +21,5 @@ Write the inventory to `.scratch/fase-1-fondasi/sumber-deret.md`. No scraping â€
 - Zero actual data collection performed.
 
 ## Comments
+
+- Sesi D (Sonnet, F4-01): inventory written to `.scratch/fase-1-fondasi/sumber-deret.md`, 10 sources, no scraping performed.

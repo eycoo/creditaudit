@@ -91,6 +91,24 @@ def write_jsonl(path: str | Path, samples: list[Sample]) -> None:
             f.write(json.dumps(s.to_dict(), ensure_ascii=False) + "\n")
 
 
+def read_series_jsonl(path: str | Path) -> list[Series]:
+    """Read raw scraped `Series` (one per line) — the `data/raw/` format.
+
+    Distinct from `read_jsonl`, which reads full `Sample` objects. Scraped
+    series carry no reasoning/question/answer yet (those come in later phases),
+    so they are stored as bare `Series` rather than partial `Sample`s.
+    """
+    with open(path, encoding="utf-8") as f:
+        return [_build(Series, json.loads(line)) for line in f if line.strip()]
+
+
+def write_series_jsonl(path: str | Path, series: list[Series]) -> None:
+    """Write raw scraped `Series` (one per line). See `read_series_jsonl`."""
+    with open(path, "w", encoding="utf-8") as f:
+        for s in series:
+            f.write(json.dumps(asdict(s), ensure_ascii=False) + "\n")
+
+
 def _build(cls: type, d: dict[str, Any]):
     _reject_unknown(cls, d)
     return cls(**d)
