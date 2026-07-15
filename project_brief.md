@@ -1,5 +1,11 @@
 # Grounded and Verifiable Chain-of-Thought for Time-Series Reasoning
 
+> **Status dokumen:** ini **spec kanonik / sumber Lampiran** (skema JSONL Lampiran A, pustaka operasi
+> Lampiran C, contoh Lampiran B/D) yang dijadikan acuan oleh kode di `src/gearts/` dan tes.
+> **Rencana riset terkini ada di [`project_brief_v2.md`](project_brief_v2.md)** (gap yang dipertajam,
+> RQ1–RQ4, desain eksperimen, rencana 5 hari). Untuk *framing dan rencana kerja*, baca v2; dokumen ini
+> untuk *definisi kanonik*, bukan rencana kerja lama (Tahap 1–6 di §9–§14, timeline §18). Peta tugas: [`.scratch/BOARD.md`](.scratch/BOARD.md).
+
 | | |
 |---|---|
 | **Nama proyek** | GEAR-TS (Grounded, Efficient, Adaptive Reasoning for Time Series). Nama kerja, bisa diganti. |

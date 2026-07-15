@@ -2,6 +2,7 @@
 
 Status: ready-for-agent
 Difficulty: easy
+Depends: —
 
 ## Spec
 

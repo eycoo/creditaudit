@@ -1,6 +1,6 @@
 # Agent Workflow
 
-How work flows through this repo: skills drive the process, sub-agents execute by difficulty, memory captures what was learned. Research phases refer to `project_brief.md` §17 (Fase 1–8).
+How work flows through this repo: skills drive the process, sub-agents execute by difficulty, memory captures what was learned. The master task list is `.scratch/BOARD.md` (the full arc awal→akhir, grouped by fase, each issue carrying `Difficulty:` + `Depends:` + readiness) — it supersedes the brief's older plan (`project_brief.md` Tahap 1–6 in §9–§14, timeline in §18). The current research plan is `project_brief_v2.md`.
 
 ## The loop
 

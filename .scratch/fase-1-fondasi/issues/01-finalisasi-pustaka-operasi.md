@@ -2,6 +2,7 @@
 
 Status: ready-for-human
 Difficulty: hard
+Depends: —
 
 ## Problem
 

@@ -13,6 +13,16 @@ training) are tracked as issues in `.scratch/`; the competition paper lives in `
 `PENJELASAN_PROJECT.md` is a plain-language Indonesian explainer derived from the brief + `CONTEXT.md` —
 keep it in sync when framing changes.
 
+**Current plan vs canonical spec — read this before planning any work.** `project_brief_v2.md` is the
+**current research plan**: the post-judge-critique revision that sharpens the gap (*keep reasoning grounded
+while the token budget is cut*), defines RQ1–RQ4, the experiment design, and a 5-day work plan. Read it for
+*what we are doing now*. `project_brief.md` is retained as the **canonical spec / appendix source** — its
+Lampiran A (JSONL schema) and Lampiran C (operation library) are what `src/gearts/` and the tests key on.
+Read it for *definitions*, not current framing, and do **not** plan off its older plan (its Tahap 1–6 in
+§9–§14, or the §18 timeline). The
+**master task list is `.scratch/BOARD.md`** — every session starts there, picks a `ready-for-agent` issue
+whose `Depends:` are all done, and claims it by updating its `Status:`.
+
 **Two names, strict scoping.** The official research title — used in the paper, README, and all
 public-facing prose — is *"Peningkatan Keandalan dan Efisiensi Token LLM pada Data Time Series melalui
 Pendekatan Verifikasi Deterministik"*. **GEAR-TS** is the internal working name only (package `gearts`,
@@ -63,8 +73,7 @@ Model policy: no haiku anywhere — easy → Sonnet, medium/hard → Opus.
 
 ## Paper (`paper/`)
 
-Current draft: `Makalah_Gemastik_PenalaranTimeSeries.docx` (the older `GEAR-TS_Makalah_Gemastik.docx`
-predates the title rule). Route paper writing through the `writer` agent — its conventions
+Current draft: `Makalah_Gemastik_PenalaranTimeSeries.docx`. Route paper writing through the `writer` agent — its conventions
 (`.claude/agents/writer.md`) are binding: official title only (never "GEAR-TS"), passive voice
 ("diusulkan", not "kami mengusulkan"), the official IEEE template's named styles and 2-column layout
 (`paper/[Template] Makalah Gemastik ieee.docx`, tables ≤ 8.5 cm), numeric citations `[n]` at clause end

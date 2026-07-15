@@ -2,6 +2,7 @@
 
 Status: ready-for-agent
 Difficulty: medium
+Depends: F4-01 (inventory)
 
 ## Spec
 
