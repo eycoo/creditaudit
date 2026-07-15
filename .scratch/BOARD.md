@@ -70,7 +70,7 @@ on `master` and is the **integration point**.
 
 | ID | Task | Difficulty | Status | Depends | File |
 |---|---|---|---|---|---|
-| F2-01 | Curate 15–30 real test series (1–2 mature domains) | medium | ready-for-agent | — | [fase-2-benchmark/issues/01](fase-2-benchmark/issues/01-kurasi-deret-uji.md) |
+| F2-01 | Curate 15–30 real test series — code+manifest (18 series) done; **JSONL belum di-generate**: run `pwsh scripts/fetch_wb.ps1` (butuh internet) lalu `python scripts/curate_benchmark_uji.py` | medium | data-pending | — | [fase-2-benchmark/issues/01](fase-2-benchmark/issues/01-kurasi-deret-uji.md) |
 | F2-02 | Questions + gold answers + shortest-grounded reference reasoning | hard | needs-info | F2-01, F1-01 | [fase-2-benchmark/issues/02](fase-2-benchmark/issues/02-pertanyaan-jawaban-reasoning-acuan.md) |
 | F2-03 | Validate benchmark (schema, grounding sweep, no leakage) | easy | needs-info | F2-01, F2-02 | [fase-2-benchmark/issues/03](fase-2-benchmark/issues/03-validasi-benchmark.md) |
 
@@ -78,7 +78,7 @@ on `master` and is the **integration point**.
 
 | ID | Task | Difficulty | Status | Depends | File |
 |---|---|---|---|---|---|
-| F3-01 | Experiment harness (model adapter → verifier → 3 metrics → tables/curve) | medium | ready-for-agent | — | [fase-3-eksperimen-tanpa-finetune/issues/01](fase-3-eksperimen-tanpa-finetune/issues/01-harness-eksperimen.md) |
+| F3-01 | Experiment harness (model adapter → verifier → 3 metrics → tables/curve) | medium | done | — | [fase-3-eksperimen-tanpa-finetune/issues/01](fase-3-eksperimen-tanpa-finetune/issues/01-harness-eksperimen.md) |
 | F3-02 | Experiment 1 — baseline hallucination test (RQ1) | medium | ready-for-human | F3-01, F2-03 | [fase-3-eksperimen-tanpa-finetune/issues/02](fase-3-eksperimen-tanpa-finetune/issues/02-eksperimen-1-halusinasi-rq1.md) |
 | F3-03 | Experiment 2 — grounding-vs-token curve (RQ2, the novelty) | hard | ready-for-human | F3-01, F2-03 | [fase-3-eksperimen-tanpa-finetune/issues/03](fase-3-eksperimen-tanpa-finetune/issues/03-eksperimen-2-kurva-rq2.md) |
 
@@ -86,8 +86,8 @@ on `master` and is the **integration point**.
 
 | ID | Task | Difficulty | Status | Depends | File |
 |---|---|---|---|---|---|
-| F4-01 | Inventory of public series sources | easy | ready-for-agent | — | [fase-1-fondasi/issues/03](fase-1-fondasi/issues/03-inventaris-sumber-deret.md) |
-| F4-02 | One-source scraper → JSONL | medium | ready-for-agent | F4-01 | [fase-1-fondasi/issues/02](fase-1-fondasi/issues/02-scraper-satu-sumber.md) |
+| F4-01 | Inventory of public series sources | easy | done | — | [fase-1-fondasi/issues/03](fase-1-fondasi/issues/03-inventaris-sumber-deret.md) |
+| F4-02 | One-source scraper → JSONL (code+test done; actual scrape = F4-03) | medium | done | F4-01 | [fase-1-fondasi/issues/02](fase-1-fondasi/issues/02-scraper-satu-sumber.md) |
 | F4-03 | Full scrape of chosen domains | medium | needs-triage | F4-02 | [fase-4-dataset/issues/03](fase-4-dataset/issues/03-scrape-penuh.md) |
 | F4-04 | Large-scale reasoning synthesis + auto-verify | hard | needs-triage | F4-03, F1-01 | [fase-4-dataset/issues/04](fase-4-dataset/issues/04-sintesis-reasoning-acuan.md) |
 | F4-05 | Train/test split + stratify + anti-leakage (§9.4) | medium | needs-triage | F4-04 | [fase-4-dataset/issues/05](fase-4-dataset/issues/05-split-anti-bocor.md) |
