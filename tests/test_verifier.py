@@ -128,3 +128,42 @@ def test_set_and_scalar_steps_both_counted():
     mixed["reasoning"][1]["hasil"] = [0]
     r2 = verify_sample(Sample.from_dict(mixed))
     assert r2["grounding_score"] == 50.0
+
+
+# --- F1-06: composite langkah{N} bindings (ADR-0003 Item 4) ---
+COMPOSITE = {
+    "id": "komposit_001",
+    "series": {"nama": "x", "satuan": "unit", "freq": "harian", "nilai": [1, 1, 1, 1, 10]},
+    "konteks": "",
+    "pertanyaan": "Rasio nilai akhir ke baseline?",
+    "reasoning": [
+        {"langkah": 1, "operasi": "rata2(nilai[0:4])", "hasil": 1.0, "teks": "baseline"},
+        {"langkah": 2, "operasi": "rasio(nilai[4], langkah1)", "hasil": 10.0, "teks": "10x baseline"},
+    ],
+    "jawaban": {"label": "naik", "keyakinan": "tinggi"},
+}
+
+
+def test_composite_langkah_reference_resolves():
+    r = verify_sample(Sample.from_dict(COMPOSITE))
+    assert r["grounding_score"] == 100.0
+    assert r["steps"][1]["expected"] == 10.0   # rasio(10.0, langkah1=1.0)
+
+
+def test_langkah_reference_to_nonscalar_step_rejected():
+    # step 1 is now a non-scalar (set) result -> not bindable; step 2's langkah1 ref must fail
+    bad = copy.deepcopy(COMPOSITE)
+    bad["reasoning"][0]["operasi"] = "deteksi_anomali(z=1.5)"
+    bad["reasoning"][0]["hasil"] = [4]
+    r = verify_sample(Sample.from_dict(bad))
+    assert r["steps"][1]["grounded"] is False
+    assert "langkah1" in r["steps"][1]["error"]
+
+
+def test_forward_langkah_reference_rejected():
+    # step 1 references step 2, which has not been computed yet -> must fail
+    bad = copy.deepcopy(COMPOSITE)
+    bad["reasoning"][0]["operasi"] = "rasio(nilai[4], langkah2)"
+    r = verify_sample(Sample.from_dict(bad))
+    assert r["steps"][0]["grounded"] is False
+    assert "langkah2" in r["steps"][0]["error"]

@@ -16,6 +16,7 @@ from gearts.operations import NEEDS_POPULATION, REGISTRY
 _OP_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*\((.*)\)\s*$")
 _SLICE_RE = re.compile(r"^nilai\[(\d+):(\d+)\]$")
 _INDEX_RE = re.compile(r"^nilai\[(\d+)\]$")
+_LANGKAH_RE = re.compile(r"^langkah\d+$")
 
 
 def parse_operasi(s: str) -> tuple[str, list[str]]:
@@ -52,6 +53,14 @@ def resolve_token(tok: str, series: np.ndarray, bindings: dict):
         pass
     if tok in bindings:
         return bindings[tok]
+    if _LANGKAH_RE.match(tok):
+        # A langkah{N} reference that isn't bound: only prior *scalar* steps are
+        # bindable, and only backward (bindings are created in step order). So an
+        # unbound langkah ref is a forward reference or a non-scalar step (ADR-0003
+        # Item 4) — reject with a diagnostic message rather than the generic one.
+        raise ValueError(
+            f"unresolvable step reference {tok!r}: only a prior scalar step is "
+            f"bindable (forward or non-scalar reference — ADR-0003 Item 4)")
     raise ValueError(f"cannot resolve token: {tok!r}")
 
 

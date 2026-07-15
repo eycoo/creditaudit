@@ -64,7 +64,7 @@ on `master` and is the **integration point**.
 | F1-01 | Finalize operation semantics + grounding tolerance (**blocker** for synthesis & non-scalar grounding) | hard | done | — | [fase-1-fondasi/issues/01](fase-1-fondasi/issues/01-finalisasi-pustaka-operasi.md) |
 | F1-04 | Tolerance sensitivity sweep + verifier validation writeup | easy | done | — | [fase-1-fondasi/issues/04](fase-1-fondasi/issues/04-uji-sensitivitas-toleransi.md) |
 | F1-05 | Non-scalar grounding (`deteksi_anomali` via index-set / Jaccard) | medium | done | — | [fase-1-fondasi/issues/05](fase-1-fondasi/issues/05-grounding-non-skalar.md) |
-| F1-06 | Lock finalized operation semantics in code + tests (ADR-0003 follow-up) | medium | ready-for-agent | — | [fase-1-fondasi/issues/06](fase-1-fondasi/issues/06-lock-operasi-semantik.md) |
+| F1-06 | Lock finalized operation semantics in code + tests (ADR-0003 follow-up) | medium | done | — | [fase-1-fondasi/issues/06](fase-1-fondasi/issues/06-lock-operasi-semantik.md) |
 
 ## Fase 2 — Small test benchmark (feeds RQ1 / RQ2)
 

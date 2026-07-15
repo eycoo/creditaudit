@@ -1,8 +1,11 @@
 # Lock finalized operation semantics in code + tests
 
-Status: ready-for-agent
+Status: done
 Difficulty: medium
 Depends: —
+
+> Session A (track-a, 2026-07-15): docstrings pinning finalized semantics + locking tests + explicit
+> langkah{N} guard in resolve_token (diagnostic error for forward/non-scalar refs). builder.
 
 ## Problem
 
@@ -45,3 +48,22 @@ In `tests/test_operations.py` (or `tests/test_verifier.py` where relevant), add 
 - The forward-reference / non-scalar-binding rejection may require a small `verifier.py` change (the current
   `resolve_token` doesn't validate either) — that's in scope here, it's enforcing ADR-0003 Item 4, not a new
   design decision.
+
+- **Done 2026-07-15 (track-a).** No behavior change to the scalar ops (as the spec predicted) — this was a
+  docstring + test lock, plus one diagnostic guard.
+  - `operations.py`: replaced both `# ponytail` markers with docstrings pinning finalized semantics —
+    `z_score` (explicit `pop` arg, whole-series default, `ddof=0` deliberate), `deteksi_anomali` (two-sided,
+    whole-series default, sorted index list, `ddof=0` matches `z_score`), `bandingkan_segmen`
+    (`mean(r2)−mean(r1)`, scalar, absolute-only, percent/ratio via composition). Added `ddof=0` inline
+    comments on both std calls noting they must agree. **No `# ponytail` left in `operations.py`.**
+  - `verifier.py`: the forward-/non-scalar-`langkah{N}` rejection was already correct *by construction*
+    (bindings are scalar-only and created in step order, so an unbound `langkah{N}` is always a forward or
+    non-scalar ref). Made it **intentional**: `resolve_token` now raises a diagnostic error naming the token
+    and citing ADR-0003 Item 4 for any unbound `langkah\d+` token, instead of the generic "cannot resolve".
+  - **Tests** (+7): `test_operations.py` — `ddof=0` (not sample std), explicit baseline window differs from
+    whole series, `bandingkan_segmen` sign (`seg2−seg1`, reversed = negative), `deteksi_anomali` two-sided
+    (low outlier flagged). `test_verifier.py` — composite `langkah{N}` resolves, non-scalar `langkah{N}`
+    rejected, forward `langkah{N}` rejected. Full suite **58 passed**; Lampiran B/D fixtures still 100% / 66.7%.
+  - **Out of scope, left intact:** the `# ponytail` markers in `metrics.py` (whitespace token proxy) and
+    `schema.py` (stdlib dataclasses vs pydantic) — those are genuine engineering deferrals unrelated to
+    ADR-0003 operation semantics, not resolved by this decision. They remain as tracked debt.
