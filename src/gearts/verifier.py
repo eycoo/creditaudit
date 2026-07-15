@@ -69,6 +69,20 @@ def _is_scalar(x) -> bool:
     return isinstance(x, (int, float, np.floating, np.integer)) and not isinstance(x, bool)
 
 
+def _is_index_set(x) -> bool:
+    # A set-valued step result — deteksi_anomali returns list[int] of indices.
+    return isinstance(x, (list, tuple, set, frozenset, np.ndarray))
+
+
+def _coerce_index_set(x) -> set[int]:
+    """Normalize a recomputed or claimed index result to a set of ints."""
+    if isinstance(x, np.ndarray):
+        x = x.tolist()
+    if _is_index_set(x):
+        return {int(i) for i in x}
+    return {int(x)}  # a lone index claimed as a scalar
+
+
 def _grounded(expected: float, claimed: float, abs_tol: float, rel_tol: float) -> bool:
     # Combined tolerance: absolute for exact results (13.0, 6.0), relative so a
     # value rounded for presentation (105.3 vs recomputed 105.26) still grounds
@@ -76,40 +90,64 @@ def _grounded(expected: float, claimed: float, abs_tol: float, rel_tol: float) -
     return abs(expected - claimed) <= max(abs_tol, rel_tol * abs(expected))
 
 
-def verify_sample(sample, abs_tol: float = 0.01, rel_tol: float = 0.01) -> dict:
+def _jaccard(a: set[int], b: set[int]) -> float:
+    # Grounding measure for set-valued steps (ADR-0003 Item 1, F1-05). Both empty
+    # -> 1.0 (claiming no anomalies where there are none is grounded).
+    union = a | b
+    if not union:
+        return 1.0
+    return len(a & b) / len(union)
+
+
+def verify_sample(sample, abs_tol: float = 0.01, rel_tol: float = 0.01,
+                  jaccard_tau: float = 1.0) -> dict:
     """Recompute every reasoning step; return per-step report + grounding score.
 
-    grounding_score = 100 * grounded / total, over scalar-returning steps.
-    Non-scalar ops (e.g. deteksi_anomali) are reported with grounded=None and
-    excluded from the score. A step whose operation fails to evaluate counts as
-    not grounded (that is the point — an ungroundable claim is ungrounded).
+    grounding_score = 100 * grounded / total, over *scored* steps (scalar and
+    set-valued). Scalar steps ground within tolerance (`abs_tol`/`rel_tol`).
+    Set-valued steps (e.g. deteksi_anomali) ground when Jaccard(recomputed set,
+    claimed set) >= `jaccard_tau` (ADR-0003 Item 1, F1-05): default 1.0 = exact
+    set equality for dataset cleaning; pass a lower tau (e.g. 0.8) at eval time.
+    A step whose operation fails to evaluate counts as not grounded (that is the
+    point — an ungroundable claim is ungrounded). Only scalar steps are bindable
+    as `langkah{N}` (ADR-0003 Item 4); set-valued results are not.
     """
     series = np.asarray(sample.series.nilai, dtype=float)
     bindings: dict = {}
     steps: list[dict] = []
     grounded_count = 0
-    scalar_count = 0
+    scored_count = 0
 
     for step in sample.reasoning:
         try:
             expected = eval_step(step.operasi, series, bindings)
         except Exception as e:  # ungroundable claim
-            scalar_count += 1
+            scored_count += 1
             steps.append({"langkah": step.langkah, "grounded": False,
                           "expected": None, "claimed": step.hasil, "error": str(e)})
             continue
 
         if _is_scalar(expected):
-            scalar_count += 1
+            scored_count += 1
             expected_f = float(expected)
             bindings[f"langkah{step.langkah}"] = expected_f
             ok = _grounded(expected_f, float(step.hasil), abs_tol, rel_tol)
             grounded_count += ok
             steps.append({"langkah": step.langkah, "grounded": bool(ok),
                           "expected": expected_f, "claimed": step.hasil})
+        elif _is_index_set(expected):
+            scored_count += 1
+            expected_set = _coerce_index_set(expected)
+            claimed_set = _coerce_index_set(step.hasil)
+            j = _jaccard(expected_set, claimed_set)
+            ok = j >= jaccard_tau
+            grounded_count += ok
+            steps.append({"langkah": step.langkah, "grounded": bool(ok),
+                          "expected": sorted(expected_set), "claimed": step.hasil,
+                          "jaccard": j})
         else:
             steps.append({"langkah": step.langkah, "grounded": None,
                           "expected": expected, "claimed": step.hasil, "note": "non-scalar"})
 
-    score = 100.0 * grounded_count / scalar_count if scalar_count else 0.0
+    score = 100.0 * grounded_count / scored_count if scored_count else 0.0
     return {"steps": steps, "grounding_score": score}
