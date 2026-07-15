@@ -1,8 +1,12 @@
 # Tolerance sensitivity sweep + verifier validation
 
-Status: ready-for-agent
+Status: in-progress
 Difficulty: easy
 Depends: —
+
+> Session A (track-a, 2026-07-15): full grid sweep abs_tol x rel_tol over
+> {0, 0.001, 0.01, 0.05, 0.1} (25 combos), honest + hallucinated Lampiran B.
+> Script: experiments/tolerance-sweep/sweep.py. Entry: docs/lab-notebook/2026-07-15-tolerance-sweep.md.
 
 ## Spec
 
