@@ -1,6 +1,6 @@
 # Experiment harness
 
-Status: ready-for-agent
+Status: in-progress
 Difficulty: medium
 Depends: —
 
@@ -32,3 +32,23 @@ The output format is the contract F6-04 (Hasil) consumes — keep it stable and 
 - Unit test on a tiny fixture; `pytest` green.
 
 ## Comments
+
+**F3-01 done (track-c).** New module `src/gearts/harness.py` — imports `verifier`
++ `metrics` only, no series arithmetic of its own (ADR-0002); `verifier.py`/`metrics.py`
+untouched.
+
+- **Adapter contract:** `predict(sample) -> (reasoning_steps, answer_label)`.
+  `MockModel` ships canned per-id outputs → fully offline-testable now. Real
+  Qwen2.5-7B / API adapters land in F3-02/F3-03.
+- **Flow:** adapter proposes reasoning → harness rebuilds the item with that reasoning
+  over the **original** series → `verify_sample` recomputes (model never owns numbers).
+- **Output contract (F6-04 consumes, keep stable):** `run_model` → `ModelResult`
+  {per-item `ItemResult`, `answer_accuracy`, `mean_grounding`, `mean_tokens`};
+  `metrics_table(results)` → one dict row/model; `curve_records(result)` → per-item
+  `(tokens, grounding, accuracy)` triples for the RQ2 curve.
+- **Tests:** `tests/test_harness.py` (7 cases: perfect/hallucinating models, verifies
+  vs original series, curve triples, table, empty benchmark). `pytest` green — 26 passed.
+- Tokenizer swap note (`# ponytail` in `metrics.py`) still stands — plug the real model
+  tokenizer at F3-02/F3-03 eval time.
+
+Not started: F3-02/F3-03 (wait on F2-03 + model access).
