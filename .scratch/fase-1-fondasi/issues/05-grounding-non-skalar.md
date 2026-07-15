@@ -1,8 +1,11 @@
 # Non-scalar grounding (deteksi_anomali index-set)
 
-Status: needs-info
+Status: ready-for-agent
 Difficulty: medium
-Depends: F1-01
+Depends: —
+
+> Unblocked 2026-07-15: F1-01 decided (ADR-0003, Accepted). Target: exact set equality at synthesis-cleaning
+> time, Jaccard similarity at eval time (threshold τ — pick a starting value, e.g. 0.8, and note it's tunable).
 
 ## Problem
 
@@ -14,13 +17,7 @@ anomaly detection enters the main metric.
 Grade a set-valued step by comparing the recomputed index set against the claimed set: exact match, or
 Jaccard similarity ≥ a threshold.
 
-## Blocked by
-
-**F1-01** must first finalize `deteksi_anomali` semantics (population window, one- vs two-sided, and what its
-`hasil` holds in a JSONL step) and the grounding rule for sets. Until then this cannot be implemented
-correctly — the label contract is undecided.
-
-## Spec (once unblocked)
+## Spec
 
 - Extend `verify_sample` to handle set-valued results with a set-grounding rule (exact or Jaccard ≥ τ).
 - Keep the scalar path unchanged; parameterize τ.

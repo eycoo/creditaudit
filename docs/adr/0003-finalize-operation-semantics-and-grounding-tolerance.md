@@ -1,7 +1,9 @@
 # ADR-0003: Finalize operation semantics + grounding tolerance
 
-**Status:** Proposed (2026-07-15) — decision doc for issue F1-01. Options + recommendation per item;
-**final call is the user's.** Flips to Accepted only after sign-off, then code/tests/CONTEXT.md follow.
+**Status:** Accepted (2026-07-15) — user accepted all five recommendations as written (Item 1: A, Item 2: A,
+Item 3: C, Item 4: A, Item 5: C) with no amendments. `CONTEXT.md` updated same day. Code/test lock tracked as
+a separate follow-up issue (`.scratch/fase-1-fondasi/issues/06-lock-operasi-semantik.md`, `ready-for-agent`,
+`medium`) — this ADR fixes the *decision*, not the code.
 
 ## Context
 
@@ -110,9 +112,16 @@ F1-04 surfaces an operation whose honest presentation rounding exceeds that band
 tolerances (B) unless the sweep proves a single global pair cannot separate honest from hallucinated across
 ops.
 
+**F1-04 sweep result (`docs/lab-notebook/2026-07-15-tolerance-sweep.md`), confirms this:** full grid
+`abs_tol × rel_tol ∈ {0, 0.001, 0.01, 0.05, 0.1}²` on the Lampiran B / D pair — the hallucination (`30` vs
+recomputed `105.26`) is caught at all 25 points; the honest sample fails only where `rel_tol=0` **and**
+`abs_tol<0.05` (presentation rounding `105.3` vs `105.26`, gap `≈0.037`, needs `rel_tol>0` to cover cheaply).
+`0.01/0.01` sits inside the safe region with ~2000× margin between the two failure thresholds. **Confirmed as
+the accepted default.**
+
 ---
 
-## Consequences (if accepted as recommended)
+## Consequences
 
 - Library stays **orthogonal**: `bandingkan_segmen` = mean difference, percent/ratio via composition; no two
   ops compute the same number.
@@ -122,25 +131,22 @@ ops.
 - Composition is `langkah{N}`-only; scalar-only bindings; forward references forbidden.
 - Grounding tolerance keeps its single-knob form; numbers confirmed by F1-04, provisionally `0.01 / 0.01`.
 
-## Follow-up issues (to file after sign-off — do not start before the user accepts)
+## Follow-up issues
 
-1. **`medium` — Lock finalized operation semantics in code + tests.** Remove `# ponytail` markers in
-   `operations.py`; add docstrings pinning: `bandingkan_segmen` = mean difference (scalar); `z_score`/`deteksi_anomali`
-   `ddof=0`, explicit-population arg, whole-series default; `deteksi_anomali` two-sided index list. Add tests:
-   `z_score` with explicit baseline window; `bandingkan_segmen` sign convention (`mean(r2)−mean(r1)`); a
-   composite `langkah{N}` chain; forward-reference / non-scalar-arg rejection. Update `CONTEXT.md` operation
-   table. Acceptance: `pytest` green, no `# ponytail` left in `operations.py`.
-2. **F1-05 (exists) — non-scalar grounding for `deteksi_anomali`** via index-set equality (clean) / Jaccard
-   (eval). This ADR fixes the semantics that produce the index list; F1-05 scores it.
-3. **`medium` (optional, deferred) — rolling/baseline-window variant** of `deteksi_anomali` and a `bandingkan_segmen`
-   percent mode, **only if** synthesis shows whole-series dilution or compose-for-percent verbosity hurts
-   label quality. Not needed for the first dataset.
+1. **F1-06 (filed) — Lock finalized operation semantics in code + tests**
+   (`.scratch/fase-1-fondasi/issues/06-lock-operasi-semantik.md`, `ready-for-agent`, `medium`). Remove
+   `# ponytail` markers in `operations.py`; add docstrings pinning: `bandingkan_segmen` = mean difference
+   (scalar); `z_score`/`deteksi_anomali` `ddof=0`, explicit-population arg, whole-series default;
+   `deteksi_anomali` two-sided index list. Add tests: `z_score` with explicit baseline window;
+   `bandingkan_segmen` sign convention (`mean(r2)−mean(r1)`); a composite `langkah{N}` chain; forward-reference
+   / non-scalar-arg rejection. Acceptance: `pytest` green, no `# ponytail` left in `operations.py`.
+2. **F1-05 (exists, now `ready-for-agent`) — non-scalar grounding for `deteksi_anomali`** via index-set
+   equality (clean) / Jaccard (eval). This ADR fixes the semantics that produce the index list; F1-05 scores
+   it.
+3. **`medium` (optional, deferred, not filed) — rolling/baseline-window variant** of `deteksi_anomali` and a
+   `bandingkan_segmen` percent mode, **only if** synthesis shows whole-series dilution or compose-for-percent
+   verbosity hurts label quality. Not needed for the first dataset.
 
-## Open questions for the user
+## Resolution
 
-- **Item 1:** OK to keep whole-series two-sided and push direction into question framing, deferring
-  trend-aware windows to a later variant?
-- **Item 2:** OK that `bandingkan_segmen` stays absolute mean-difference and percent comes from composition,
-  rather than making percent the default?
-- **Item 5:** Confirm the grounding tolerance stays a single global knob (numbers from F1-04), not
-  per-operation?
+User accepted all recommendations as-is (2026-07-15), no amendments. No open questions remain.

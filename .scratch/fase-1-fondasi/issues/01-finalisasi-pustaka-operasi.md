@@ -1,12 +1,14 @@
 # Finalisasi pustaka operasi + semantik grounding
 
-Status: in-progress
+Status: done
 Difficulty: hard
 Depends: —
 
-> Session A (track-a, 2026-07-15): decision doc prepared as ADR-0003 (Status: Proposed). No code touched.
-> Options + recommendation + trade-offs per provisional item. Final call is the user's; ADR flips to
-> Accepted only after sign-off, then CONTEXT.md / operations.py / tests follow.
+> Session A (track-a, 2026-07-15): decision doc prepared as ADR-0003. User accepted all five recommendations
+> as-is (Item 1: A, Item 2: A, Item 3: C, Item 4: A, Item 5: C, confirmed by the F1-04 sweep). ADR-0003 ->
+> Accepted, CONTEXT.md operation table updated. Code+test lock split into F1-06 (ready-for-agent, medium) —
+> this issue's decision-making scope is complete; F1-06 carries the "tests updated" acceptance bullet.
+> F1-05 unblocked (Depends cleared, now ready-for-agent).
 
 ## Problem
 

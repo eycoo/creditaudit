@@ -21,14 +21,17 @@ The full research arc, start to finish, for the Gemastik project. Every session 
 
 ## Parallel tracks (what can run at the same time without colliding)
 
-- **Track A — Verifier/method:** F1-01, F1-04, F1-05
+- **Track A — Verifier/method:** F1-01, F1-04, F1-05, F1-06
 - **Track B — Benchmark:** F2-01 → F2-02 → F2-03
 - **Track C — Experiments (no fine-tune):** F3-01 → F3-02, F3-03
 - **Track D — Dataset:** F4-01 → F4-02 → F4-03 → F4-04 → F4-05
 - **Track E — Fine-tune + heavy experiments:** F5-01 → F5-02 → F5-03, F5-04
 - **Track F — Paper:** F6-01, F6-02 (now) → F6-03, F6-04 → F6-05
 
-**Startable right now, in parallel, zero collision:** `F1-04` (verifier), `F3-01` (harness), `F4-01` (source inventory), `F6-01` (paper positioning), `F6-02` (verify citations). Plus `F1-01` is a **user decision** that unblocks the most downstream work — do it first.
+**Startable right now, in parallel, zero collision:** `F1-05`, `F1-06` (both unblocked by F1-01 as of
+2026-07-15), `F3-01` (harness), `F4-01` (source inventory), `F6-01` (paper positioning), `F6-02` (verify
+citations). `F1-01` is **done** (ADR-0003 Accepted, committed on `track-a`, not yet merged to `master` —
+Sessions B/D still need `git merge master` after integration before touching F2-02/F4-04).
 
 ## Parallel run (4 sessions) — coordination
 
@@ -38,7 +41,7 @@ on `master` and is the **integration point**.
 
 | Session | Track | Worktree · branch | Wave-0 task (start now) | Waits on |
 |---|---|---|---|---|
-| A | Verifier | `../gems-A` · `track-a` | F1-01 (your decision) + F1-04 | F1-05 ← F1-01 |
+| A | Verifier | `../gems-A` · `track-a` | F1-01 done, F1-04 done → next: F1-05, F1-06 | — |
 | B | Benchmark | `../gems-B` · `track-b` | F2-01 | F2-02 ← F1-01 + F2-01 |
 | C | Experiments | `../gems-C` · `track-c` | F3-01 | F3-02/03 ← F2-03 + model access |
 | D | Dataset | `../gems-D` · `track-d` | F4-01 → F4-02 | F4-04 ← F1-01 + F4-03 |
@@ -58,9 +61,10 @@ on `master` and is the **integration point**.
 
 | ID | Task | Difficulty | Status | Depends | File |
 |---|---|---|---|---|---|
-| F1-01 | Finalize operation semantics + grounding tolerance (**blocker** for synthesis & non-scalar grounding) | hard | ready-for-human | — | [fase-1-fondasi/issues/01](fase-1-fondasi/issues/01-finalisasi-pustaka-operasi.md) |
-| F1-04 | Tolerance sensitivity sweep + verifier validation writeup | easy | ready-for-agent | — | [fase-1-fondasi/issues/04](fase-1-fondasi/issues/04-uji-sensitivitas-toleransi.md) |
-| F1-05 | Non-scalar grounding (`deteksi_anomali` via index-set / Jaccard) | medium | needs-info | F1-01 | [fase-1-fondasi/issues/05](fase-1-fondasi/issues/05-grounding-non-skalar.md) |
+| F1-01 | Finalize operation semantics + grounding tolerance (**blocker** for synthesis & non-scalar grounding) | hard | done | — | [fase-1-fondasi/issues/01](fase-1-fondasi/issues/01-finalisasi-pustaka-operasi.md) |
+| F1-04 | Tolerance sensitivity sweep + verifier validation writeup | easy | done | — | [fase-1-fondasi/issues/04](fase-1-fondasi/issues/04-uji-sensitivitas-toleransi.md) |
+| F1-05 | Non-scalar grounding (`deteksi_anomali` via index-set / Jaccard) | medium | ready-for-agent | — | [fase-1-fondasi/issues/05](fase-1-fondasi/issues/05-grounding-non-skalar.md) |
+| F1-06 | Lock finalized operation semantics in code + tests (ADR-0003 follow-up) | medium | ready-for-agent | — | [fase-1-fondasi/issues/06](fase-1-fondasi/issues/06-lock-operasi-semantik.md) |
 
 ## Fase 2 — Small test benchmark (feeds RQ1 / RQ2)
 

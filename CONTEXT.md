@@ -25,9 +25,25 @@ Ubiquitous language for GEAR-TS. Use these exact terms in issues, tests, ADRs, a
 | **reasoning[].langkah / operasi / hasil / teks** | Step index, the operation string, the claimed numeric result, and the plain-language gloss |
 | **jawaban.label / keyakinan** | Final answer label and confidence (`rendah`/`sedang`/`tinggi`) |
 
-## Operation library (Lampiran C — `src/gearts/operations.py`)
+## Operation library (Lampiran C — `src/gearts/operations.py`, semantics finalized ADR-0003)
 
-`rata2` (mean) · `delta` (b−a) · `persen_naik` (percent change) · `rasio` (ratio) · `slope` (linear trend) · `min` / `max` · `z_score` (deviation in std) · `deteksi_anomali` (points past a z threshold) · `bandingkan_segmen` (compare two segments). Operation-string forms: `rata2(nilai[0:5])`, `persen_naik(nilai[11]->nilai[15])`, `rasio(nilai[15], 13.0)`.
+| Operation | Semantics | `hasil` shape | Grounding |
+|---|---|---|---|
+| **rata2** | mean of a range | scalar | tolerance |
+| **delta** | `b − a` | scalar | tolerance |
+| **persen_naik** | `(b−a)/a·100` | scalar | tolerance |
+| **rasio** | `a/b` | scalar | tolerance |
+| **slope** | linear-trend slope over a range | scalar | tolerance |
+| **min / max** | extreme value over a range | scalar | tolerance |
+| **z_score** | `(x−mean(pop))/std(pop)`, `ddof=0` (population std, not sample). `pop` = **explicit argument if given, else the whole series** — pass an explicit baseline window (e.g. `z_score(nilai[15], nilai[0:8])`) on a trending series; whole-series default is for roughly stationary series | scalar | tolerance |
+| **deteksi_anomali** | `\|z\|>ambang` over the **whole series** (not rolling), **two-sided**, `ddof=0` — matches `z_score`. Direction (upward-only outbreak framing) is expressed in the *question*, not the primitive | `list[int]`, sorted 0-based indices into `nilai` | non-scalar — F1-05 (index-set exact match at clean, Jaccard at eval) |
+| **bandingkan_segmen** | `mean(r2) − mean(r1)`, absolute difference only. Percent/ratio between segments is expressed by **composition**: `rata2` each segment, then `persen_naik`/`rasio` on the two `langkah{N}` bindings — not a separate op | scalar | tolerance |
+
+**Composite steps** reference a prior step's scalar result as `langkah{N}` (N = that step's `langkah` index),
+e.g. `rasio(nilai[15], langkah1)` — not a free name like `baseline`. Only **scalar**-returning steps are
+bindable; a step may only reference `langkah{N}` for `N` less than its own index (no forward references).
+
+Operation-string forms: `rata2(nilai[0:5])`, `persen_naik(nilai[11]->nilai[15])`, `rasio(nilai[15], langkah1)`.
 
 ## Reasoning tasks (scope — `project_brief.md` §6)
 
