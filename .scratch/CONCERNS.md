@@ -23,6 +23,7 @@ Status: `open` · `in-progress` · `resolved`
   1. **Recompute independen** — ambil N langkah random dari benchmark, hitung ulang tiap operasi lewat **jalur kedua** (pandas / rumus manual, bukan `verifier.py`), cocokin sama `expected` verifier → lapor exact-match %.
   2. **Spot-check manusia** — sampel K grounded + K ungrounded dari output model asli, manusia konfirmasi label bener → lapor agreement %.
 - **Catatan:** F1-04 (done) cuma bukti **internal** (verifier cocok Lampiran B/D + tolerance sweep) — BUKAN cross-check independen.
+- **Catatan (Sesi D, F4-04):** train set `train_acuan.jsonl` (336 sampel) labelnya **juga** dibuat verifier (by construction), jadi recompute independen mesti mengambil sampel dari **train**, bukan cuma benchmark uji. Semantik train ≡ eval (sama `build_reference`/`verify_sample`), jadi satu cross-check menutup keduanya.
 - **Owner:** Track A (#5). **Status:** open — mulai duluan (murah, no GPU).
 
 ## C4 — test benchmark skala + generalisasi lapangan  [#4]
