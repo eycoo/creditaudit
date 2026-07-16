@@ -49,13 +49,18 @@ overflow bobotnya, bukan cache). Dua jalur, dan notebook `kaggle_rq1_rq2.ipynb`
 - **1×T4:** fallback ke model **AWQ 4-bit** `Qwen/Qwen2.5-7B-Instruct-AWQ` (~6 GB, muat).
   Kuantisasi sedikit menggeser output — pakai hanya jika T4 x2 tak tersedia.
 
-Config disetel lewat **env var** (dibaca `experiments/_kaggle_env.py`), jadi `main()`
-tetap tanpa argumen: `GEARTS_VLLM_TP`, `GEARTS_VLLM_MODEL`, `GEARTS_VLLM_QUANT`,
-`GEARTS_VLLM_GPU_UTIL`, `GEARTS_VLLM_MAX_LEN`, `GEARTS_VLLM_DTYPE`. Set manual bila jalan
-di luar notebook, misal 2×T4:
+Config dipilih **otomatis di dalam kode** (`experiments/_kaggle_env.py` → `vllm_overrides()`
+membaca `torch.cuda.device_count()`), jadi `main()` tetap tanpa argumen dan tak bergantung
+pada cell notebook. Ia juga memasang `enforce_eager=True` untuk **melewati torch.compile** —
+di T4 yang ketat memori, langkah compile itu sendiri bisa OOM, dan untuk benchmark 18 sampel
+percepatannya tak sebanding waktu kompilasi.
+
+Override manual (opsional) lewat env var, menang per-kunci: `GEARTS_VLLM_TP`,
+`GEARTS_VLLM_MODEL`, `GEARTS_VLLM_QUANT`, `GEARTS_VLLM_GPU_UTIL`, `GEARTS_VLLM_MAX_LEN`,
+`GEARTS_VLLM_DTYPE`. Misal paksa full-precision 2×T4:
 
 ```bash
-GEARTS_VLLM_TP=2 GEARTS_VLLM_DTYPE=half python experiments/exp1_rq1.py
+GEARTS_VLLM_TP=2 GEARTS_VLLM_MODEL=Qwen/Qwen2.5-7B-Instruct python experiments/exp1_rq1.py
 ```
 
 > Catatan: `exp2` memakai 4 setting panjang penalaran dengan model yang sama; adapter
