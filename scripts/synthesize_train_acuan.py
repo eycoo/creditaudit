@@ -59,15 +59,17 @@ MAX_ATTEMPTS = 400        # reject-sampling: buang deret yang tak lolos band/gro
 # (nama, domain, satuan, freq, (level_min, level_max)). Level jadi skala deret;
 # bentuk per-tugas ditumpangkan di atasnya. Semua level positif (aman untuk
 # persen_naik base != 0).
+# Nama SENGAJA disjoint dari 18 nama indikator benchmark uji (anti-bocor 9.4:
+# tak berbagi identitas sumber dengan test).
 PROFILES = [
-    ("imunisasi_campak", "kesehatan", "persen anak", "tahunan", (70.0, 95.0)),
+    ("cakupan_posyandu", "kesehatan", "persen balita", "tahunan", (70.0, 95.0)),
     ("kasus_demam_berdarah", "kesehatan", "kasus per minggu", "mingguan", (60.0, 400.0)),
     ("harga_beras", "pangan-pertanian", "rupiah per kg", "mingguan", (10000.0, 15000.0)),
-    ("indeks_produksi_pangan", "pangan-pertanian", "indeks (2015=100)", "tahunan", (90.0, 130.0)),
+    ("stok_beras_bulog", "pangan-pertanian", "ribu ton", "tahunan", (90.0, 130.0)),
     ("beban_listrik", "energi", "MW", "harian", (15000.0, 25000.0)),
     ("suhu_udara", "cuaca", "derajat celsius", "harian", (24.0, 33.0)),
-    ("harapan_hidup", "kesehatan", "tahun", "tahunan", (63.0, 72.0)),
-    ("inflasi_tahunan", "pangan-pertanian", "persen", "tahunan", (3.0, 9.0)),
+    ("peserta_jkn", "kesehatan", "persen penduduk", "tahunan", (63.0, 72.0)),
+    ("inflasi_inti", "pangan-pertanian", "persen", "tahunan", (3.0, 9.0)),
 ]
 
 

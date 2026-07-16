@@ -37,3 +37,4 @@ Status: `open` · `in-progress` · `resolved`
 
 ## Keputusan tercatat
 - **D1 (2026-07-16):** framework fine-tune = **Unsloth** (bukan LLaMA-Factory). Tetap QLoRA NF4 4-bit, Qwen2.5-7B-Instruct. F5-01 direframe; butuh converter gearts JSONL → format chat Unsloth. ADR menyusul saat F5-01 di-grill.
+  - **Update (Sesi D, F4-05, 2026-07-17):** converter **sudah ada** — `scripts/to_unsloth.py` → `data/train_unsloth.jsonl` (sharegpt `messages`) + `data/dataset_info.json`. user=`build_prompt(mode="pendek")`, assistant=reasoning gold. Round-trip converter→`parse_model_output` diuji identik. Siap dipakai F5-01.
