@@ -10,6 +10,8 @@ Offline-testable: `run()` takes adapters + samples and touches no GPU; only
 """
 from __future__ import annotations
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -40,11 +42,32 @@ def main() -> int:  # pragma: no cover - needs GPU/vLLM
     from _kaggle_env import vllm_overrides
 
     from gearts.adapters.qwen_vllm import QwenVLLMAdapter
+    from gearts.harness import metrics_table, run_model
 
     ov = vllm_overrides()  # TP / AWQ / mem knobs from env (see README-kaggle.md)
     samples = load_benchmark()
-    adapters = [QwenVLLMAdapter(mode="panjang", **ov)]
-    rows = run(adapters, samples)
+
+    # Multi-model mode: run_rq1_multi.py launches one process per roster model,
+    # setting GEARTS_MODEL_ID (which model) + GEARTS_ROW_OUT (where to drop its
+    # one-row JSON). One process = one model loaded, so the GPU is freed between
+    # models — three 7-9B models never sit in VRAM at once.
+    model_id = os.environ.get("GEARTS_MODEL_ID")
+    row_out = os.environ.get("GEARTS_ROW_OUT")
+    if model_id:
+        ov.pop("model", None)  # roster model overrides auto-detected (AWQ) model
+        name = os.environ.get("GEARTS_MODEL_NAME") or model_id.split("/")[-1]
+        adapter = QwenVLLMAdapter(name=name, model=model_id, mode="panjang", **ov)
+    else:
+        adapter = QwenVLLMAdapter(mode="panjang", **ov)
+
+    if row_out:  # single-model worker: emit just this model's row, no table
+        row = metrics_table([run_model(adapter, samples)])[0]
+        Path(row_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(row_out).write_text(json.dumps(row), encoding="utf-8")
+        print("row ->", row_out, row)
+        return 0
+
+    rows = run([adapter], samples)  # standalone: one model → full table
     for r in rows:
         print(r)
     print(f"\nDitulis ke {OUTDIR_DEFAULT}")

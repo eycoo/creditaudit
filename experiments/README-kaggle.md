@@ -37,6 +37,21 @@ laptop — dijalankan di **Kaggle GPU** lewat vLLM. Berikut langkahnya.
    Tabel/kurva ini yang dikonsumsi paper (F6-04) dan dianalisis agent `researcher` (temuan RQ2:
    grounding turun lebih cepat dari accuracy).
 
+## RQ1 lintas beberapa model (baseline hallucination lebih kuat)
+
+`run_rq1_multi.py` menjalankan beberapa base model, satu baris per model dalam satu tabel —
+menunjukkan halusinasi numerik itu **umum**, bukan khusus satu model. Tiap model jalan di
+**proses terpisah** (VRAM dibebaskan antar-model), jadi butuh **GPU besar** (≥ ~24 GB, mis.
+A6000). Di kartu 16 GB, pakai `exp1_rq1.py` single-model (AWQ) saja.
+
+```bash
+export HF_TOKEN=hf_xxx            # Llama-3.1 & Gemma-2 gated: terima lisensi di HF dulu
+python experiments/run_rq1_multi.py
+```
+
+Roster default: `Qwen2.5-7B-Instruct` (anchor), `Llama-3.1-8B-Instruct`, `Gemma-2-9B-it`.
+Edit `ROSTER` di `experiments/run_rq1_multi.py` untuk ganti/menambah model.
+
 ## OOM: Qwen2.5-7B fp16 (~14.3 GB) tidak muat di 1×T4 (16 GB)
 
 Bobot model saja hampir memenuhi satu T4, jadi tak ada sisa untuk KV cache → `CUDA out
