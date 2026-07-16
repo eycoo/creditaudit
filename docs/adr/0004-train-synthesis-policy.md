@@ -1,6 +1,8 @@
 # ADR-0004: Kebijakan sintesis TRAIN set (F4-04)
 
-**Status:** Accepted (2026-07-16). Mengimplementasikan pipeline dataset brief v2 §4.3 untuk sisi *train*.
+**Status:** Accepted (2026-07-16). **Diamandemen oleh [ADR-0005](0005-train-real-bps.md)**
+(2026-07-17): train kini hibrid — deret nyata BPS ditambahkan; sintetis-terkendali di
+sini tetap dipakai sebagai penyeimbang strata, bukan lagi satu-satunya sumber. Mengimplementasikan pipeline dataset brief v2 §4.3 untuk sisi *train*.
 Menghasilkan `data/synthetic/train_acuan.jsonl` (336 sampel) via `scripts/synthesize_train_acuan.py`.
 Tidak mengubah `operations.py`/`verifier.py`/`synthesize_reasoning_acuan.py` — memakai ulang `build_reference`
 dan `verify_sample` apa adanya (semantik operasi tetap ADR-0003).

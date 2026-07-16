@@ -32,6 +32,18 @@ Status: `open` · `in-progress` · `resolved`
   - Lebih kuat: +≥1 sumber Indonesia frekuensi tinggi (PIHPS harga pangan harian / BMKG) walau sedikit.
 - **Owner:** F4-03 + regen `curate_benchmark_uji.py`. **Status:** open.
 
+## C5 — series TRAIN sintetik, bukan real (kualitas data untuk lomba data-mining)  [F4-03]
+- **Concern (user, 2026-07-17):** ini lomba **data mining** → kualitas & pemrosesan data real berbobot nilai. 600 train saat ini = deret **sintetik-terkendali**; kenapa bukan sumber asli? Catatan: **label reasoning selalu disintesis+verify** (kontribusi utama, tak terhindar); yang bisa di-"real"-kan hanya **series (angka deret)**.
+- **Keputusan:** upgrade series train ke **real, sumber ke-2** (bukan WB test → anti-bocor bersih).
+- **Probe kelayakan (2026-07-17, live curl dari box):**
+  - **PIHPS/BI** `GetGridDataDaily` → balas kosong; tak ada API resmi. **Mati/rapuh, di-skip.**
+  - **Bapanas Panel Harga v2** (`api-panelhargav2.badanpangan.go.id`) → **harian**, tapi key-gated keras. Key frontend publik (`x-api-key`, 160-char, di `main.*.js`) **tetap ditolak** walau + Referer/Origin → kemungkinan interceptor tanda-tangani per-request/recaptcha. **Defer** (butuh Playwright/analisis lebih dalam).
+  - **BMKG** forecast `data.bmkg.go.id` hidup tapi **jangka-pendek** (bukan histori panjang); `dataonline` histori butuh registrasi/form.
+  - **BPS Web API** (`webapi.bps.go.id`) → **DIPILIH**: JSON resmi, docs `/documentation/` + register `/developer/` (200), key gratis, TOS jelas, bulanan histori panjang, provider ≠ WB.
+- **Implikasi desain (jujur, harus di-disclose):** dgn series **real**, kesulitan=label **muncul dari data** (`build_reference` hitung label jujur per window) — tak bisa dipaksa seimbang via reject-sampling spt generator sintetik. Strata jadi **best-effort**; laporkan distribusi nyata; sintetik jadi backfill strata tipis.
+- **HASIL (2026-07-17, key BPS didapat user):** adapter `src/gearts/scrapers/bps.py` (network di-isolasi, konstruksi-key + normalisasi pure, 13 unit-test). `scripts/synthesize_train_real.py` → **143 deret nyata BPS** (5 indikator: miskin P0/jumlah, garis kemiskinan, pengangguran, gini; per-provinsi) → **572 sampel, 100% grounded, anti-bocor 0**. Label emergent jujur; ANOMALI auto-detect (baseline jendela-awal) → `ada_anomali` 62 / `tidak` 81 (guncangan COVID-2020 nyata). Digabung sintetik 600 (penyeimbang sel tipis) → `data/train_unsloth.jsonl` **1172** (572 real + 600 sintetik). ADR-0005. pytest 123 passed. Key via env, tak di-commit.
+- **Owner:** F4-03. **Status:** resolved — train kini mengandung deret nyata BPS. Sisa pengayaan (opsional): BPS bulanan (`turth`) + Bapanas harian via Playwright.
+
 ---
 
 ## Keputusan tercatat

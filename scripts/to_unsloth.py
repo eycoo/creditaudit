@@ -29,7 +29,14 @@ if str(_ROOT / "src") not in sys.path:
 from gearts.adapters.qwen_vllm import _SYSTEM, build_prompt  # noqa: E402
 from gearts.schema import Sample, read_jsonl  # noqa: E402
 
-TRAIN = _ROOT / "data" / "synthetic" / "train_acuan.jsonl"
+# Sumber train (digabung bila ada): deret NYATA BPS lebih dulu (headline
+# data-mining), lalu deret sintetis-terkendali sebagai penyeimbang strata.
+# Keduanya 100% grounded + anti-bocor; provenance terlihat dari prefix id
+# (`train_bps_*` = real, `train_*` = sintetik) dan didokumentasikan di manifest.
+SOURCES = [
+    _ROOT / "data" / "synthetic" / "train_real.jsonl",
+    _ROOT / "data" / "synthetic" / "train_acuan.jsonl",
+]
 OUT = _ROOT / "data" / "train_unsloth.jsonl"
 INFO = _ROOT / "data" / "dataset_info.json"
 
@@ -77,15 +84,26 @@ DATASET_INFO = {
 
 
 def main() -> int:
-    if not TRAIN.exists():
-        print(f"GAGAL: {TRAIN} tak ada (jalankan F4-04 dulu).", file=sys.stderr)
+    present = [p for p in SOURCES if p.exists()]
+    if not present:
+        print(f"GAGAL: tak ada sumber train {[p.name for p in SOURCES]} "
+              f"(jalankan synthesize_train_real.py / synthesize_train_acuan.py dulu).",
+              file=sys.stderr)
         return 1
-    samples = read_jsonl(TRAIN)
+    samples: list[Sample] = []
+    counts: dict[str, int] = {}
+    for p in present:
+        rows = read_jsonl(p)
+        counts[p.name] = len(rows)
+        samples.extend(rows)
     with open(OUT, "w", encoding="utf-8") as f:
         for s in samples:
             f.write(json.dumps(to_conversation(s), ensure_ascii=False) + "\n")
     INFO.write_text(json.dumps(DATASET_INFO, ensure_ascii=False, indent=2), encoding="utf-8")
+    n_real = sum(1 for s in samples if s.id.startswith("train_bps_"))
     print(f"OK: {len(samples)} percakapan -> {OUT}")
+    print(f"    sumber: {counts}")
+    print(f"    provenance: {n_real} real (BPS) + {len(samples) - n_real} sintetik-terkendali")
     print(f"    dataset_info -> {INFO}")
     return 0
 
