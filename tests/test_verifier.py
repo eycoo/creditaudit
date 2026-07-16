@@ -66,6 +66,16 @@ def test_eval_step_slice_and_index():
     assert eval_step("max(nilai)", series, {}) == 78.0
 
 
+def test_eval_step_negative_index_and_slice():
+    # `nilai[-1]` (last element) and negative slice bounds are standard, unambiguous
+    # index forms a stock model uses spontaneously. The verifier must resolve them so
+    # a low grounding score reflects real numeric error, not index-syntax pedantry.
+    import numpy as np
+    series = np.array(LAMPIRAN_B["series"]["nilai"], dtype=float)  # nilai[0]=12, nilai[-1]=78
+    assert eval_step("delta(nilai[0]->nilai[-1])", series, {}) == 66.0      # 78 - 12
+    assert eval_step("rata2(nilai[-4:16])", series, {}) == 59.0             # mean([45,52,61,78])
+
+
 # --- F1-05: non-scalar grounding for deteksi_anomali (ADR-0003 Item 1) ---
 # Series [1,1,1,1,10]: mean 2.8, std 3.6, so z of the 10 is +2.0 and z of each 1
 # is -0.5. deteksi_anomali(z=1.5) therefore flags exactly index 4 (hand-checked).

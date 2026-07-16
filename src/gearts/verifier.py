@@ -14,8 +14,8 @@ import numpy as np
 from gearts.operations import NEEDS_POPULATION, REGISTRY
 
 _OP_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*\((.*)\)\s*$")
-_SLICE_RE = re.compile(r"^nilai\[(\d+):(\d+)\]$")
-_INDEX_RE = re.compile(r"^nilai\[(\d+)\]$")
+_SLICE_RE = re.compile(r"^nilai\[(-?\d+):(-?\d+)\]$")
+_INDEX_RE = re.compile(r"^nilai\[(-?\d+)\]$")
 _LANGKAH_RE = re.compile(r"^langkah\d+$")
 
 
