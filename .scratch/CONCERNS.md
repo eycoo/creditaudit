@@ -20,9 +20,9 @@ Status: `open` · `in-progress` · `resolved`
 ## C3 — verifier = pembersih data + juri eval (sirkular?)  [#5]
 - **Concern:** verifier bikin label train **dan** nilai eval. Reviewer bisa bilang "skor grounding = apa kata kodemu sendiri".
 - **Cara verifikasi:**
-  1. **Recompute independen** — hitung ulang tiap langkah ter-skor lewat **jalur kedua** (`experiments/verifier-crosscheck/independent.py`, NumPy murni, nol impor `gearts`; parser + semantik index/slice + rumus ditulis ulang tangan, mis. `slope` OLS bukan `np.polyfit`), cocokin sama `expected` verifier. **Hasil (2026-07-16): 471/471 = 100.00% match, 0 mismatch** atas `benchmark_acuan` (21) + `train_acuan` (450, data yang dibersihkan verifier); `benchmark_uji` reasoning kosong (0 langkah). Bug verifier: nihil. Runner `crosscheck.py`, notebook `docs/lab-notebook/2026-07-16-verifier-crosscheck.md`, pytest +4 (89 passed).
+  1. **Recompute independen** — hitung ulang tiap langkah ter-skor lewat **jalur kedua** (`experiments/verifier-crosscheck/independent.py`, NumPy murni, nol impor `gearts`; parser + semantik index/slice + rumus ditulis ulang tangan, mis. `slope` OLS bukan `np.polyfit`), cocokin sama `expected` verifier. **Hasil (2026-07-16): 471/471 = 100.00% match, 0 mismatch** atas `benchmark_acuan` (21) + `train_acuan` (450, data yang dibersihkan verifier); `benchmark_uji` reasoning kosong (0 langkah). Bug verifier: nihil. Runner `crosscheck.py`, notebook `docs/lab-notebook/2026-07-16-verifier-crosscheck.md`, pytest +4 (89 passed). (Angka train berubah bila train set diregen — rerun crosscheck setelah scale.)
   2. **Spot-check manusia** — `experiments/verifier-crosscheck/spotcheck.csv` (10 grounded nyata + 10 ungrounded perturbasi) siap diaudit; agreement label pada output model **asli** menunggu keluaran track eval.
-- **Catatan:** F1-04 (done) cuma bukti **internal** (verifier cocok Lampiran B/D + tolerance sweep) — BUKAN cross-check independen; item ini yang independen.
+- **Catatan:** F1-04 (done) cuma bukti **internal** (verifier cocok Lampiran B/D + tolerance sweep) — BUKAN cross-check independen; item ini yang independen. Cross-check **mencakup train** (label train juga verifier-made, by construction) — jadi kekhawatiran sirkularitas sisi-train ikut tertutup, bukan cuma sisi-eval.
 - **Owner:** Track A (#5). **Status:** in-progress — aritmetik terbukti tak sirkular (100% match); sisa: agreement manusia pada output model asli.
 
 ## C4 — test benchmark skala + generalisasi lapangan  [#4]
@@ -36,3 +36,4 @@ Status: `open` · `in-progress` · `resolved`
 
 ## Keputusan tercatat
 - **D1 (2026-07-16):** framework fine-tune = **Unsloth** (bukan LLaMA-Factory). Tetap QLoRA NF4 4-bit, Qwen2.5-7B-Instruct. F5-01 direframe; butuh converter gearts JSONL → format chat Unsloth. ADR menyusul saat F5-01 di-grill.
+  - **Update (Sesi D, F4-05, 2026-07-17):** converter **sudah ada** — `scripts/to_unsloth.py` → `data/train_unsloth.jsonl` (sharegpt `messages`) + `data/dataset_info.json`. user=`build_prompt(mode="pendek")`, assistant=reasoning gold. Round-trip converter→`parse_model_output` diuji identik. Siap dipakai F5-01.

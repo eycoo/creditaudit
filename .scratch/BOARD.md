@@ -90,8 +90,8 @@ on `master` and is the **integration point**.
 | F4-01 | Inventory of public series sources | easy | done | — | [fase-1-fondasi/issues/03](fase-1-fondasi/issues/03-inventaris-sumber-deret.md) |
 | F4-02 | One-source scraper → JSONL (code+test done; actual scrape = F4-03) | medium | done | F4-01 | [fase-1-fondasi/issues/02](fase-1-fondasi/issues/02-scraper-satu-sumber.md) |
 | F4-03 | Full scrape of chosen domains | medium | needs-triage | F4-02 | [fase-4-dataset/issues/03](fase-4-dataset/issues/03-scrape-penuh.md) |
-| F4-04 | Large-scale reasoning synthesis + auto-verify | hard | needs-triage | F4-03, F1-01 | [fase-4-dataset/issues/04](fase-4-dataset/issues/04-sintesis-reasoning-acuan.md) |
-| F4-05 | Train/test split + stratify + anti-leakage (§9.4) | medium | needs-triage | F4-04 | [fase-4-dataset/issues/05](fase-4-dataset/issues/05-split-anti-bocor.md) |
+| F4-04 | Large-scale reasoning synthesis + auto-verify — **336 sampel train, 100% grounded, sintetis-terkendali** (`data/synthetic/train_acuan.jsonl`; ADR-0004; regen: `python scripts/synthesize_train_acuan.py`) | hard | done (track-d, pending merge) | F1-01 (F4-03 decoupled) | [fase-4-dataset/issues/04](fase-4-dataset/issues/04-sintesis-reasoning-acuan.md) |
+| F4-05 | Train/test split + stratify + anti-leakage (§9.4) + **converter Unsloth (D1)** — `split_dataset.py` (anti-bocor LOLOS, 0 tabrakan), `to_unsloth.py` → `data/train_unsloth.jsonl` + `dataset_info.json` | medium | done (track-d, pending merge) | F4-04 | [fase-4-dataset/issues/05](fase-4-dataset/issues/05-split-anti-bocor.md) |
 
 > Note: F4-01/F4-02 physically live under `fase-1-fondasi/issues/` (kept there so historical lab-notebook links stay valid); they belong to the Data track.
 
