@@ -51,7 +51,7 @@ from synthesize_reasoning_acuan import ANOMALI_PARAMS, build_reference  # noqa: 
 
 TASKS = [TREN, SEGMEN, ANOMALI, PENJELASAN]
 DIFFS = ["easy", "medium", "hard"]
-PER_STRATUM = 28          # 4 tugas x 3 kesulitan x 28 = 336 (> target 300)
+PER_STRATUM = 50          # 4 tugas x 3 kesulitan x 50 = 600 (skala penuh; > target 300)
 ROUND = 2                 # desimal nilai deret; hasil dihitung DARI deret ini
 MAX_ATTEMPTS = 400        # reject-sampling: buang deret yang tak lolos band/grounding
 
@@ -70,6 +70,10 @@ PROFILES = [
     ("suhu_udara", "cuaca", "derajat celsius", "harian", (24.0, 33.0)),
     ("peserta_jkn", "kesehatan", "persen penduduk", "tahunan", (63.0, 72.0)),
     ("inflasi_inti", "pangan-pertanian", "persen", "tahunan", (3.0, 9.0)),
+    ("okupansi_hotel", "pariwisata", "persen kamar", "bulanan", (40.0, 85.0)),
+    ("penumpang_krl", "transportasi", "ribu orang per hari", "harian", (600.0, 1100.0)),
+    ("nilai_ekspor_kopi", "perdagangan", "juta USD", "bulanan", (30.0, 120.0)),
+    ("trafik_data_seluler", "telekomunikasi", "petabyte per bulan", "bulanan", (500.0, 1500.0)),
 ]
 
 

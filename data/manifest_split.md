@@ -4,7 +4,7 @@ Split brief 9.4: **train** semi-sintetik untuk skala, **test** deret asli
 untuk generalisasi; distratifikasi tugas x kesulitan; sumber uji tak muncul
 di train. Seed tetap (F4-04 deterministik) -> reprodusibel.
 
-- **TRAIN** `data/synthetic/train_acuan.jsonl` — 336 sampel, sintetis-terkendali (ADR-0004).
+- **TRAIN** `data/synthetic/train_acuan.jsonl` — 600 sampel, sintetis-terkendali (ADR-0004).
 - **TEST** `data/processed/benchmark_acuan.jsonl` — 18 sampel, deret REAL World Bank (F2-01/02).
 
 ## Anti-bocor (brief 9.4)
@@ -22,11 +22,11 @@ di train. Seed tetap (F4-04 deterministik) -> reprodusibel.
 
 | tugas \ kesulitan | easy | medium | hard | total |
 |---|---|---|---|---|
-| tren | 28 | 28 | 28 | 84 |
-| segmen | 28 | 28 | 28 | 84 |
-| anomali | 28 | 28 | 28 | 84 |
-| penjelasan | 28 | 28 | 28 | 84 |
-| **total** | 112 | 112 | 112 | 336 |
+| tren | 50 | 50 | 50 | 150 |
+| segmen | 50 | 50 | 50 | 150 |
+| anomali | 50 | 50 | 50 | 150 |
+| penjelasan | 50 | 50 | 50 | 150 |
+| **total** | 200 | 200 | 200 | 600 |
 
 ### TEST
 
