@@ -19,11 +19,11 @@ Status: `open` · `in-progress` · `resolved`
 
 ## C3 — verifier = pembersih data + juri eval (sirkular?)  [#5]
 - **Concern:** verifier bikin label train **dan** nilai eval. Reviewer bisa bilang "skor grounding = apa kata kodemu sendiri".
-- **Cara verifikasi (belum jalan):**
-  1. **Recompute independen** — ambil N langkah random dari benchmark, hitung ulang tiap operasi lewat **jalur kedua** (pandas / rumus manual, bukan `verifier.py`), cocokin sama `expected` verifier → lapor exact-match %.
-  2. **Spot-check manusia** — sampel K grounded + K ungrounded dari output model asli, manusia konfirmasi label bener → lapor agreement %.
-- **Catatan:** F1-04 (done) cuma bukti **internal** (verifier cocok Lampiran B/D + tolerance sweep) — BUKAN cross-check independen.
-- **Owner:** Track A (#5). **Status:** open — mulai duluan (murah, no GPU).
+- **Cara verifikasi:**
+  1. **Recompute independen** — hitung ulang tiap langkah ter-skor lewat **jalur kedua** (`experiments/verifier-crosscheck/independent.py`, NumPy murni, nol impor `gearts`; parser + semantik index/slice + rumus ditulis ulang tangan, mis. `slope` OLS bukan `np.polyfit`), cocokin sama `expected` verifier. **Hasil (2026-07-16): 471/471 = 100.00% match, 0 mismatch** atas `benchmark_acuan` (21) + `train_acuan` (450, data yang dibersihkan verifier); `benchmark_uji` reasoning kosong (0 langkah). Bug verifier: nihil. Runner `crosscheck.py`, notebook `docs/lab-notebook/2026-07-16-verifier-crosscheck.md`, pytest +4 (89 passed).
+  2. **Spot-check manusia** — `experiments/verifier-crosscheck/spotcheck.csv` (10 grounded nyata + 10 ungrounded perturbasi) siap diaudit; agreement label pada output model **asli** menunggu keluaran track eval.
+- **Catatan:** F1-04 (done) cuma bukti **internal** (verifier cocok Lampiran B/D + tolerance sweep) — BUKAN cross-check independen; item ini yang independen.
+- **Owner:** Track A (#5). **Status:** in-progress — aritmetik terbukti tak sirkular (100% match); sisa: agreement manusia pada output model asli.
 
 ## C4 — test benchmark skala + generalisasi lapangan  [#4]
 - **Concern:** 18 test item kekecilan buat klaim generalisasi lapangan.
