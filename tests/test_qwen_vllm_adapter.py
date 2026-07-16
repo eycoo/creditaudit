@@ -6,10 +6,14 @@ with a clear, actionable error.
 """
 import pytest
 
+import dataclasses
+
 from gearts.adapters.qwen_vllm import (
     QwenVLLMAdapter,
+    answer_options,
     build_prompt,
     parse_model_output,
+    snap_label,
 )
 from gearts.schema import Sample
 
@@ -81,6 +85,34 @@ def test_max_steps_caps_and_renumbers():
     assert len(steps) == 1
     assert steps[0].langkah == 1
     assert label == "outbreak"
+
+
+def _with_question(q: str) -> Sample:
+    return dataclasses.replace(SAMPLE, pertanyaan=q)
+
+
+def test_answer_options_inferred_per_task():
+    assert answer_options(_with_question("Bagaimana kecenderungan (tren) X sepanjang periode?")) \
+        == ["meningkat", "menurun", "relatif_stabil"]
+    assert answer_options(_with_question("Bandingkan rata-rata X paruh awal versus paruh akhir?")) \
+        == ["paruh_awal_lebih_tinggi", "paruh_akhir_lebih_tinggi", "setara"]
+    assert answer_options(_with_question("Apakah ada tahun yang menyimpang tak biasa?")) \
+        == ["ada_anomali", "tidak_ada_anomali"]
+    assert answer_options(_with_question("Apakah ada outbreak?")) == []  # unknown → no menu
+
+
+def test_prompt_lists_answer_options_when_known():
+    p = build_prompt(_with_question("Bagaimana kecenderungan (tren) X sepanjang periode?"))
+    assert "relatif_stabil" in p and "menurun" in p    # menu present
+    assert "Contoh format" in p                        # worked example present
+
+
+def test_snap_label_onto_option_set():
+    seg = ["paruh_awal_lebih_tinggi", "paruh_akhir_lebih_tinggi", "setara"]
+    assert snap_label("paruh awal lebih tinggi", seg) == "paruh_awal_lebih_tinggi"  # spacing
+    assert snap_label("tren menurun", ["meningkat", "menurun"]) == "menurun"        # verbose
+    assert snap_label("outbreak", []) == "outbreak"                                 # no options
+    assert snap_label("entah", ["meningkat", "menurun"]) == "entah"                 # no match kept
 
 
 def test_adapter_name_reflects_config():

@@ -61,28 +61,89 @@ _STEP_RE = re.compile(
 )
 _ANS_RE = re.compile(r"^\s*JAWABAN\s*:\s*(?P<label>.+?)\s*$", re.IGNORECASE)
 
+# Closed answer-label sets per task type (mirror scripts/synthesize_reasoning_acuan.py).
+# The prompt MUST present these or the model can't produce the exact gold token and
+# answer_accuracy is 0 by construction.
+# ponytail: infer task from the templated question; move to an explicit
+# `opsi_jawaban` field when the benchmark is regenerated.
+_TASK_OPSI = {
+    "tren": ["meningkat", "menurun", "relatif_stabil"],
+    "segmen": ["paruh_awal_lebih_tinggi", "paruh_akhir_lebih_tinggi", "setara"],
+    "anomali": ["ada_anomali", "tidak_ada_anomali"],
+    "penjelasan": ["naik_besar", "naik_kecil", "turun_besar", "turun_kecil", "tidak_monoton"],
+}
+
+# One worked example — instruct models follow the LANGKAH/JAWABAN format far more
+# reliably when shown it once than when only told the grammar.
+_CONTOH = (
+    "Contoh format (deret lain, nilai = [10, 12, 15, 19]):\n"
+    "LANGKAH 1: slope(nilai[0:4]) = 3.0 | tren naik linear\n"
+    "LANGKAH 2: persen_naik(nilai[0]->nilai[3]) = 90.0 | perubahan ujung ke ujung\n"
+    "JAWABAN: naik_besar"
+)
+
+
+def answer_options(sample: Sample) -> list[str]:
+    """Allowed answer labels for this item, inferred from the templated question."""
+    q = sample.pertanyaan.lower()
+    if "paruh awal" in q or "paruh akhir" in q:
+        return _TASK_OPSI["segmen"]
+    if "menyimpang" in q or "anomali" in q:
+        return _TASK_OPSI["anomali"]
+    if "pola utama" in q or "arah dan besar" in q:
+        return _TASK_OPSI["penjelasan"]
+    if "kecenderungan" in q or "tren" in q:
+        return _TASK_OPSI["tren"]
+    return []
+
 
 def _fmt_series(sample: Sample) -> str:
     vals = ", ".join(str(v) for v in sample.series.nilai)
     return f"[{vals}]"
 
 
-def build_prompt(sample: Sample, mode: str = "panjang", max_steps: int | None = None) -> str:
+def build_prompt(sample: Sample, mode: str = "panjang", max_steps: int | None = None,
+                 opsi: list[str] | None = None) -> str:
     """User prompt for one item. Pure — no model call, safe to test offline."""
     instruksi = _MODE_INSTRUKSI.get(mode, _MODE_INSTRUKSI["panjang"])
     if max_steps is not None:
         instruksi += f" Pakai paling banyak {max_steps} langkah."
+    opsi = answer_options(sample) if opsi is None else opsi
+    menu = f"JAWABAN harus **tepat satu** dari label ini: {', '.join(opsi)}.\n" if opsi else ""
     return (
         f"Deret: {sample.series.nama} (satuan {sample.series.satuan}, {sample.series.freq}).\n"
         f"Konteks: {sample.konteks}\n"
         f"nilai = {_fmt_series(sample)}\n"
         f"Pertanyaan: {sample.pertanyaan}\n\n"
-        f"{instruksi}\n{_FORMAT}"
+        f"{instruksi}\n{menu}{_FORMAT}\n\n{_CONTOH}"
     )
 
 
 def _normalize_label(s: str) -> str:
     return s.strip().strip(".").lower()
+
+
+def _canon(s: str) -> str:
+    """Collapse to a comparable slug: lowercase, non-alphanumerics → underscore."""
+    return re.sub(r"[^a-z0-9]+", "_", s.lower()).strip("_")
+
+
+def snap_label(label: str, opsi: list[str]) -> str:
+    """Snap a free-form label onto the closed option set (spacing/verbosity tolerant).
+
+    `"paruh awal lebih tinggi"` → `"paruh_awal_lebih_tinggi"`, `"tren menurun"` →
+    `"menurun"`. Returns the label unchanged if nothing matches (or no options).
+    """
+    if not opsi:
+        return label
+    c = _canon(label)
+    for o in opsi:
+        if _canon(o) == c:
+            return o
+    for o in opsi:  # verbose answer that contains an option token
+        if _canon(o) in c:
+            return o
+    return label
 
 
 def parse_model_output(text: str) -> tuple[list[ReasoningStep], str]:
@@ -141,6 +202,7 @@ class QwenVLLMAdapter:
         self.name = name or f"qwen2.5-7b:{mode}" + (f":<= {max_steps}" if max_steps else "")
         self._llm = None
         self._SamplingParams = None
+        self.last_raw = ""  # last raw model text, for debug_dump.py
 
     def _ensure_llm(self):
         if self._llm is None:
@@ -169,7 +231,9 @@ class QwenVLLMAdapter:
     def predict(self, sample: Sample) -> tuple[list[ReasoningStep], str]:
         prompt = build_prompt(sample, mode=self.mode, max_steps=self.max_steps)
         text = self._generate(prompt)
+        self.last_raw = text
         steps, label = parse_model_output(text)
+        label = snap_label(label, answer_options(sample))  # onto closed option set
         if self.max_steps is not None and len(steps) > self.max_steps:
             steps = steps[: self.max_steps]
             for i, s in enumerate(steps, start=1):
