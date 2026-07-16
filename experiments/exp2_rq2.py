@@ -12,6 +12,8 @@ GPU; only `main()` builds the real vLLM adapters. Run on Kaggle — see README-k
 """
 from __future__ import annotations
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -67,13 +69,38 @@ def main() -> int:  # pragma: no cover - needs GPU/vLLM
 
     ov = vllm_overrides()  # same model+kwargs across settings → one shared engine (see adapter cache)
     samples = load_benchmark()
+
+    # Worker mode (run_rq2_multi.py): one process per roster model. GEARTS_MODEL_ID
+    # picks the model for all four length settings (loaded once via the engine
+    # cache); GEARTS_ROW_OUT collects this model's tagged curve rows for merging.
+    model_id = os.environ.get("GEARTS_MODEL_ID")
+    row_out = os.environ.get("GEARTS_ROW_OUT")
+    if model_id:
+        ov.pop("model", None)  # roster model overrides auto-detected (AWQ) model
+        mname = os.environ.get("GEARTS_MODEL_NAME") or model_id.split("/")[-1]
+        mkw = {"model": model_id}
+    else:
+        mname, mkw = None, {}
+
     # Titik kurva dari panjang penuh → makin pendek (prompt mode + cap langkah).
     settings = [
-        ("panjang", QwenVLLMAdapter(name="panjang", mode="panjang", **ov)),
-        ("pendek", QwenVLLMAdapter(name="pendek", mode="pendek", **ov)),
-        ("cap-2", QwenVLLMAdapter(name="cap-2", mode="pendek", max_steps=2, **ov)),
-        ("cap-1", QwenVLLMAdapter(name="cap-1", mode="pendek", max_steps=1, **ov)),
+        ("panjang", QwenVLLMAdapter(name="panjang", mode="panjang", **mkw, **ov)),
+        ("pendek", QwenVLLMAdapter(name="pendek", mode="pendek", **mkw, **ov)),
+        ("cap-2", QwenVLLMAdapter(name="cap-2", mode="pendek", max_steps=2, **mkw, **ov)),
+        ("cap-1", QwenVLLMAdapter(name="cap-1", mode="pendek", max_steps=1, **mkw, **ov)),
     ]
+
+    if row_out:  # per-model worker: curve to its own subdir + tagged rows JSON
+        curve_rows, _ = run(settings, samples, outdir=OUTDIR_DEFAULT / "rows" / (mname or "model"))
+        for r in curve_rows:
+            r["model"] = mname
+        Path(row_out).parent.mkdir(parents=True, exist_ok=True)
+        Path(row_out).write_text(json.dumps(curve_rows), encoding="utf-8")
+        print("rows ->", row_out)
+        for r in curve_rows:
+            print(r)
+        return 0
+
     curve_rows, _ = run(settings, samples)
     for r in curve_rows:
         print(r)
