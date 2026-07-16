@@ -38,6 +38,10 @@ _SYSTEM = (
     "diverifikasi ulang. Jangan mengarang angka."
 )
 
+# Some instruct models (Gemma) ship a chat template that rejects a "system" role;
+# fold the system instruction into the user turn for those instead.
+_NO_SYSTEM_ROLE = ("gemma",)
+
 # Instruksi panjang penalaran — knob RQ2.
 _MODE_INSTRUKSI = {
     "pendek": "Gunakan langkah **sesedikit mungkin** — hanya operasi yang benar-benar menentukan jawaban.",
@@ -176,6 +180,14 @@ def parse_model_output(text: str) -> tuple[list[ReasoningStep], str]:
     return steps, label
 
 
+def build_chat(model: str, system: str, prompt: str) -> list[dict]:
+    """Chat messages for `model` — folds system→user when the model's template
+    rejects a system role (e.g. Gemma), else a normal system+user pair. Pure."""
+    if any(t in model.lower() for t in _NO_SYSTEM_ROLE):
+        return [{"role": "user", "content": f"{system}\n\n{prompt}"}]
+    return [{"role": "system", "content": system}, {"role": "user", "content": prompt}]
+
+
 class QwenVLLMAdapter:
     """`ModelAdapter` for Qwen2.5-7B-Instruct on vLLM (offline / single-node GPU).
 
@@ -224,7 +236,7 @@ class QwenVLLMAdapter:
     def _generate(self, prompt: str) -> str:  # pragma: no cover - needs GPU
         llm = self._ensure_llm()
         sp = self._SamplingParams(temperature=self.temperature, max_tokens=self.max_tokens)
-        convo = [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": prompt}]
+        convo = build_chat(self.model, _SYSTEM, prompt)
         out = llm.chat(convo, sp)
         return out[0].outputs[0].text
 

@@ -11,6 +11,7 @@ import dataclasses
 from gearts.adapters.qwen_vllm import (
     QwenVLLMAdapter,
     answer_options,
+    build_chat,
     build_prompt,
     parse_model_output,
     snap_label,
@@ -113,6 +114,15 @@ def test_snap_label_onto_option_set():
     assert snap_label("tren menurun", ["meningkat", "menurun"]) == "menurun"        # verbose
     assert snap_label("outbreak", []) == "outbreak"                                 # no options
     assert snap_label("entah", ["meningkat", "menurun"]) == "entah"                 # no match kept
+
+
+def test_build_chat_folds_system_for_gemma():
+    from gearts.adapters.qwen_vllm import _SYSTEM
+    q = build_chat("Qwen/Qwen2.5-7B-Instruct", _SYSTEM, "P")
+    assert [m["role"] for m in q] == ["system", "user"]     # models with system support
+    g = build_chat("google/gemma-2-9b-it", _SYSTEM, "P")    # Gemma template rejects system role
+    assert [m["role"] for m in g] == ["user"]
+    assert _SYSTEM in g[0]["content"] and "P" in g[0]["content"]
 
 
 def test_adapter_name_reflects_config():
