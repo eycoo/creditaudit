@@ -4,19 +4,24 @@ The config is decided **in code** (not in a notebook cell) so it always travels
 with the clone and can't go stale. `vllm_overrides()` auto-detects the GPUs and
 picks a setup that fits Kaggle, unless `GEARTS_VLLM_*` env vars override it:
 
-- **2×T4** → `tensor_parallel_size=2`, full precision (cleanest baseline);
-- **1×T4** → `Qwen/Qwen2.5-7B-Instruct-AWQ` 4-bit, which fits one 16 GB card.
+- **big single GPU** (≥20 GB: A6000/A100/L4/3090…) → full-precision Qwen2.5-7B, no
+  quantization, no tensor-parallel (the cleanest, fastest baseline);
+- **2×T4** → `tensor_parallel_size=2`, full precision split across the two cards;
+- **1×T4** (small single GPU) → `Qwen/Qwen2.5-7B-Instruct-AWQ` 4-bit, which fits 16 GB.
 
 `enforce_eager=True` skips torch.compile/cudagraph capture — on a memory-tight T4
 that compile step itself OOMs, and for an 18-sample benchmark its throughput gain
-isn't worth the minutes of compilation. Off Kaggle (no torch/GPU) everything falls
-back to `QwenVLLMAdapter` defaults, so nothing changes for the offline tests.
+isn't worth the minutes of compilation. `dtype=half` is forced only on pre-Ampere
+cards (T4, compute < 8.0) that lack bfloat16; bigger cards keep bf16 (dtype auto).
+Off-GPU everything falls back to `QwenVLLMAdapter` defaults, so the offline tests
+are unaffected.
 """
 from __future__ import annotations
 
 import os
 
 MODEL_AWQ = "Qwen/Qwen2.5-7B-Instruct-AWQ"
+BIG_GPU_GB = 20  # ≥ this on one card → run the full 7B unquantized on it
 
 
 def _gpu_count() -> int:
@@ -28,19 +33,46 @@ def _gpu_count() -> int:
         return 0
 
 
+def _min_gpu_mem_gb() -> float:
+    """Smallest per-GPU total memory (GB), 0 if none/unknown."""
+    try:
+        import torch
+
+        n = torch.cuda.device_count()
+        return min(torch.cuda.get_device_properties(i).total_memory for i in range(n)) / 1e9
+    except Exception:
+        return 0.0
+
+
+def _no_bf16() -> bool:
+    """True on pre-Ampere GPUs (compute capability < 8.0) which lack bfloat16."""
+    try:
+        import torch
+
+        major, _ = torch.cuda.get_device_capability(0)
+        return major < 8
+    except Exception:
+        return False
+
+
 def _auto_detect() -> dict:
-    """A vLLM config sized to the visible GPUs (Kaggle T4 / T4×2)."""
+    """A vLLM config sized to the visible GPUs (memory-aware)."""
     kw: dict = {
-        "dtype": "half",  # T4 (compute 7.5) has no bfloat16
         "max_model_len": 4096,  # series prompts are short; small KV cache
         "gpu_memory_utilization": 0.92,
-        "enforce_eager": True,  # skip torch.compile — avoids the compile-time OOM
+        "enforce_eager": True,  # skip torch.compile — avoids compile-time OOM, faster cold start
     }
     n = _gpu_count()
+    if n == 0:
+        return kw
+    if _no_bf16():
+        kw["dtype"] = "half"  # T4-class card: force fp16
+    mem = _min_gpu_mem_gb()
     if n >= 2:
         kw["tensor_parallel_size"] = n  # split the 7B across GPUs, keep full precision
-    elif n == 1:
-        kw["model"] = MODEL_AWQ  # 4-bit fits a single 16 GB T4
+    elif mem < BIG_GPU_GB:
+        kw["model"] = MODEL_AWQ  # small single GPU (≈16 GB T4) → 4-bit
+    # else: big single GPU → full-precision Qwen2.5-7B, no AWQ, no TP
     return kw
 
 

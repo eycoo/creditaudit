@@ -50,8 +50,16 @@ overflow bobotnya, bukan cache). Dua jalur, dan notebook `kaggle_rq1_rq2.ipynb`
   Kuantisasi sedikit menggeser output — pakai hanya jika T4 x2 tak tersedia.
 
 Config dipilih **otomatis di dalam kode** (`experiments/_kaggle_env.py` → `vllm_overrides()`
-membaca `torch.cuda.device_count()`), jadi `main()` tetap tanpa argumen dan tak bergantung
-pada cell notebook. Ia juga memasang `enforce_eager=True` untuk **melewati torch.compile** —
+membaca jumlah **dan memori** GPU), jadi `main()` tetap tanpa argumen dan tak bergantung
+pada cell notebook:
+
+| GPU terdeteksi | Pilihan otomatis |
+|---|---|
+| 1× besar (≥20 GB: A6000/A100/L4/3090…) | Qwen2.5-7B **presisi penuh**, tanpa AWQ/TP (tercepat & terbersih) |
+| 2×T4 | `tensor_parallel_size=2`, presisi penuh dibagi 2 kartu |
+| 1×T4 (~16 GB) | model **AWQ 4-bit** |
+
+`dtype=half` dipaksa hanya di kartu pra-Ampere (T4) yang tak punya bf16; kartu besar tetap bf16. Ia juga memasang `enforce_eager=True` untuk **melewati torch.compile** —
 di T4 yang ketat memori, langkah compile itu sendiri bisa OOM, dan untuk benchmark 18 sampel
 percepatannya tak sebanding waktu kompilasi.
 
