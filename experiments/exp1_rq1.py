@@ -37,10 +37,13 @@ def run(adapters, samples, outdir: str | Path = OUTDIR_DEFAULT) -> list[dict]:
 
 
 def main() -> int:  # pragma: no cover - needs GPU/vLLM
+    from _kaggle_env import vllm_overrides
+
     from gearts.adapters.qwen_vllm import QwenVLLMAdapter
 
+    ov = vllm_overrides()  # TP / AWQ / mem knobs from env (see README-kaggle.md)
     samples = load_benchmark()
-    adapters = [QwenVLLMAdapter(mode="panjang")]
+    adapters = [QwenVLLMAdapter(mode="panjang", **ov)]
     rows = run(adapters, samples)
     for r in rows:
         print(r)

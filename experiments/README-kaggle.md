@@ -37,16 +37,29 @@ laptop — dijalankan di **Kaggle GPU** lewat vLLM. Berikut langkahnya.
    Tabel/kurva ini yang dikonsumsi paper (F6-04) dan dianalisis agent `researcher` (temuan RQ2:
    grounding turun lebih cepat dari accuracy).
 
-## Kalau OOM di 1×T4 (16 GB)
+## OOM: Qwen2.5-7B fp16 (~14.3 GB) tidak muat di 1×T4 (16 GB)
 
-Adapter meneruskan `**llm_kwargs` ke `vllm.LLM`. Edit konstruksi adapter di `main()`
-(`exp1_rq1.py` / `exp2_rq2.py`) menjadi, misalnya:
+Bobot model saja hampir memenuhi satu T4, jadi tak ada sisa untuk KV cache → `CUDA out
+of memory` saat load. `gpu_memory_utilization`/`max_model_len` **tidak** menolong (yang
+overflow bobotnya, bukan cache). Dua jalur, dan notebook `kaggle_rq1_rq2.ipynb`
+**memilihnya otomatis** dari jumlah GPU:
 
-```python
-QwenVLLMAdapter(mode="panjang", gpu_memory_utilization=0.90, max_model_len=4096, dtype="half")
+- **2×T4 (rekomendasi):** `tensor_parallel_size=2` — bobot dibagi dua GPU, **presisi
+  penuh** (baseline paling bersih). Pilih accelerator **GPU T4 x2**.
+- **1×T4:** fallback ke model **AWQ 4-bit** `Qwen/Qwen2.5-7B-Instruct-AWQ` (~6 GB, muat).
+  Kuantisasi sedikit menggeser output — pakai hanya jika T4 x2 tak tersedia.
+
+Config disetel lewat **env var** (dibaca `experiments/_kaggle_env.py`), jadi `main()`
+tetap tanpa argumen: `GEARTS_VLLM_TP`, `GEARTS_VLLM_MODEL`, `GEARTS_VLLM_QUANT`,
+`GEARTS_VLLM_GPU_UTIL`, `GEARTS_VLLM_MAX_LEN`, `GEARTS_VLLM_DTYPE`. Set manual bila jalan
+di luar notebook, misal 2×T4:
+
+```bash
+GEARTS_VLLM_TP=2 GEARTS_VLLM_DTYPE=half python experiments/exp1_rq1.py
 ```
 
-Untuk **2×T4**: tambah `tensor_parallel_size=2`.
+> Catatan: `exp2` memakai 4 setting panjang penalaran dengan model yang sama; adapter
+> punya **cache engine** sehingga model dimuat **sekali**, bukan 4×.
 
 ## Titik kurva RQ2 (default `exp2_rq2.py`)
 

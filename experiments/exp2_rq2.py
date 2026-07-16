@@ -61,15 +61,18 @@ def run(settings, samples, outdir: str | Path = OUTDIR_DEFAULT) -> tuple[list[di
 
 
 def main() -> int:  # pragma: no cover - needs GPU/vLLM
+    from _kaggle_env import vllm_overrides
+
     from gearts.adapters.qwen_vllm import QwenVLLMAdapter
 
+    ov = vllm_overrides()  # same model+kwargs across settings → one shared engine (see adapter cache)
     samples = load_benchmark()
     # Titik kurva dari panjang penuh → makin pendek (prompt mode + cap langkah).
     settings = [
-        ("panjang", QwenVLLMAdapter(name="panjang", mode="panjang")),
-        ("pendek", QwenVLLMAdapter(name="pendek", mode="pendek")),
-        ("cap-2", QwenVLLMAdapter(name="cap-2", mode="pendek", max_steps=2)),
-        ("cap-1", QwenVLLMAdapter(name="cap-1", mode="pendek", max_steps=1)),
+        ("panjang", QwenVLLMAdapter(name="panjang", mode="panjang", **ov)),
+        ("pendek", QwenVLLMAdapter(name="pendek", mode="pendek", **ov)),
+        ("cap-2", QwenVLLMAdapter(name="cap-2", mode="pendek", max_steps=2, **ov)),
+        ("cap-1", QwenVLLMAdapter(name="cap-1", mode="pendek", max_steps=1, **ov)),
     ]
     curve_rows, _ = run(settings, samples)
     for r in curve_rows:

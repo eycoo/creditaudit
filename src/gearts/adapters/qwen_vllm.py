@@ -24,6 +24,12 @@ from gearts.schema import ReasoningStep, Sample
 
 MODEL_DEFAULT = "Qwen/Qwen2.5-7B-Instruct"
 
+# One vLLM engine per (model, kwargs). Adapters that differ only in reasoning
+# length (mode/max_steps are prompt/parse-time knobs, same weights) then share a
+# single loaded engine — critical so exp2's 4 length settings don't load the 7B
+# model 4× and OOM. Keyed on the GPU-affecting config only.
+_ENGINE_CACHE: dict = {}
+
 _OPS = ", ".join(REGISTRY)  # canonical operation names for the prompt
 
 _SYSTEM = (
@@ -138,15 +144,19 @@ class QwenVLLMAdapter:
 
     def _ensure_llm(self):
         if self._llm is None:
-            try:
-                from vllm import LLM, SamplingParams  # lazy: only when actually running a model
-            except ImportError as e:  # pragma: no cover - exercised only off-GPU
-                raise RuntimeError(
-                    "vLLM tidak terpasang. Jalankan di lingkungan ber-GPU: `pip install vllm` "
-                    "(lihat experiments/README-kaggle.md)."
-                ) from e
-            self._SamplingParams = SamplingParams
-            self._llm = LLM(model=self.model, **self._llm_kwargs)
+            key = (self.model, tuple(sorted(self._llm_kwargs.items())))
+            entry = _ENGINE_CACHE.get(key)
+            if entry is None:  # first adapter with this config actually loads the model
+                try:
+                    from vllm import LLM, SamplingParams  # lazy: only when actually running a model
+                except ImportError as e:  # pragma: no cover - exercised only off-GPU
+                    raise RuntimeError(
+                        "vLLM tidak terpasang. Jalankan di lingkungan ber-GPU: `pip install vllm` "
+                        "(lihat experiments/README-kaggle.md)."
+                    ) from e
+                entry = (LLM(model=self.model, **self._llm_kwargs), SamplingParams)
+                _ENGINE_CACHE[key] = entry
+            self._llm, self._SamplingParams = entry
         return self._llm
 
     def _generate(self, prompt: str) -> str:  # pragma: no cover - needs GPU
