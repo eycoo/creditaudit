@@ -5,6 +5,7 @@ The full research arc, start to finish, for the Gemastik project. Every session 
 - **Current plan:** [`project_brief_v2.md`](../project_brief_v2.md) (sharpened gap, RQ1–RQ4, experiments, 5-day plan).
 - **Canonical spec / Lampiran:** [`project_brief.md`](../project_brief.md) (JSONL schema + operation library the code keys on).
 - **How work is routed:** [`docs/agents/workflow.md`](../docs/agents/workflow.md).
+- **User's concern register (how to verify each):** [`CONCERNS.md`](CONCERNS.md) — check every session; keep concerns from getting lost.
 
 > **Fase numbering:** the Fase 1–6 grouping below is *this board's own* and is authoritative. It supersedes the brief's older Tahap 1–6 (`project_brief.md` §9–§14) and §18 timeline — plan from this board, not from those. (Note: `project_brief.md` §17 is *Ethics/Legal*, not a phase list.)
 
