@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Push RQ1/RQ2 result files back to the repo so a `git pull` on your laptop pulls
 # them in. Run from the repo root on the GPU box, with a GitHub token that has
-# write (contents) access to eycoo/creditaudit:
+# write (contents) access to cliprompter/creditaudit:
 #
 #   GITHUB_TOKEN=ghp_xxx bash scripts/push_results.sh
 #
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 : "${GITHUB_TOKEN:?set GITHUB_TOKEN (GitHub PAT with write access) first}"
-REMOTE="https://${GITHUB_TOKEN}@github.com/eycoo/creditaudit.git"
+REMOTE="https://${GITHUB_TOKEN}@github.com/cliprompter/creditaudit.git"
 
 git config user.name  "${GIT_NAME:-results-bot}"
 git config user.email "${GIT_EMAIL:-results-bot@users.noreply.github.com}"
