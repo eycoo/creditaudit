@@ -101,8 +101,8 @@ on `master` and is the **integration point**.
 |---|---|---|---|---|---|
 | F5-01 | QLoRA training setup (LLaMA-Factory + ZeRO-2 notebook) | medium | needs-triage | F4-05 | [fase-5-finetune-eksperimen/issues/01](fase-5-finetune-eksperimen/issues/01-setup-qlora.md) |
 | F5-02 | Fine-tune Qwen2.5-7B | medium | ready-for-human | F5-01 | [fase-5-finetune-eksperimen/issues/02](fase-5-finetune-eksperimen/issues/02-finetune-qwen.md) |
-| F5-03 | Experiment 3 — our method vs baselines B1–B4, grounding-per-token (RQ3) | hard | needs-triage | F5-02, F3-01 | [fase-5-finetune-eksperimen/issues/03](fase-5-finetune-eksperimen/issues/03-eksperimen-3-vs-baseline-rq3.md) |
-| F5-04 | Experiment 4 — ablation (RQ4) | hard | needs-triage | F5-02, F3-01 | [fase-5-finetune-eksperimen/issues/04](fase-5-finetune-eksperimen/issues/04-eksperimen-4-ablation-rq4.md) |
+| F5-03 | Experiment 3 — our method vs baselines B1–B4, grounding-per-token (RQ3) — **code ready** (`experiments/exp3_rq3.py` + `methods.py`, LoRA wired in `adapters/qwen_vllm.py`); **run di box A6000** (set `GEARTS_LORA_PATH`) | hard | ready-for-human (run box) | F5-02, F3-01 | [fase-5-finetune-eksperimen/issues/03](fase-5-finetune-eksperimen/issues/03-eksperimen-3-vs-baseline-rq3.md) |
+| F5-04 | Experiment 4 — ablation (RQ4) — **code ready** (`experiments/exp4_rq4.py` + `methods.py`); **run di box A6000** | hard | ready-for-human (run box) | F5-02, F3-01 | [fase-5-finetune-eksperimen/issues/04](fase-5-finetune-eksperimen/issues/04-eksperimen-4-ablation-rq4.md) |
 
 ## Fase 6 — Paper
 

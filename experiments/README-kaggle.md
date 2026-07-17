@@ -93,3 +93,45 @@ GEARTS_VLLM_TP=2 GEARTS_VLLM_MODEL=Qwen/Qwen2.5-7B-Instruct python experiments/e
 
 `panjang` → `pendek` → `cap-2` → `cap-1` (prompt makin ringkas + batas langkah makin ketat).
 Tiap titik mengukur `(mean_tokens, mean_grounding, answer_accuracy)`.
+
+## RQ3 / RQ4 — metode kami (fine-tuned) vs baseline & ablasi
+
+Butuh **adapter LoRA hasil fine-tune** (F5-02). Jalankan di **GPU besar** (A6000):
+LoRA disajikan di atas base **full-precision** `Qwen/Qwen2.5-7B-Instruct` (bukan AWQ),
+jadi jangan pakai kartu 16 GB untuk ini. Adapter dilatih di base unsloth 4-bit tetapi
+disajikan di base fp16 — ini standar (bobot LoRA low-rank menempel ke modul yang sama).
+
+1. **Taruh adapter** hasil fine-tune (folder berisi `adapter_config.json` +
+   `adapter_model.safetensors`) di repo, mis. `notebooks/lora_qwen_penalaran_ts`, atau
+   set path-nya:
+   ```bash
+   export GEARTS_LORA_PATH=/home/jovyan/work/creditaudit/notebooks/lora_qwen_penalaran_ts
+   ```
+2. **Jalankan (dari root repo):**
+   ```bash
+   python experiments/exp3_rq3.py   # RQ3 -> experiments/rq3/tabel_rq3.{csv,md}
+   python experiments/exp4_rq4.py   # RQ4 -> experiments/rq4/tabel_rq4.{csv,md}
+   ```
+
+Base-model dan metode LoRA **berbagi satu engine** (`enable_lora=True`,
+`max_lora_rank=32`); LoRA dipilih per-request, jadi 7B dimuat **sekali** saja.
+
+**Metode RQ3** (headline `grounding_per_token`):
+
+| metode | model | bentuk | cerita |
+|---|---|---|---|
+| B1-prosa | base | prosa bebas | tanpa operasi → grounding ~0 |
+| B2-veritime | base | operasi, panjang | tergrounding tapi boros token |
+| B3-selfbudget | base | operasi, pendek | murah, grounding turun |
+| B4-statistik | — | hitung murni | jawaban saja, tak ada penalaran (0 token) |
+| **Kami** | **LoRA** | operasi, terpendek-tergrounding | grounding/token terbaik |
+
+**Ablasi RQ4** (dari Kami, matikan satu komponen): `-finetune` (base),
+`-format_operasi` (prosa), `-target_terpendek` (panjang), `-adaptif` (cap-1 tetap).
+
+> **Token RQ3/RQ4 dihitung dari output MENTAH model** (jumlah kata) — adil untuk prosa
+> vs operasi — beda dari RQ1/RQ2 yang berbasis langkah terparsing. B4 tak memanggil
+> model (0 token; grounding tak berlaku → ditulis `NA`).
+>
+> Definisi baseline/ablasi ini **default yang langsung bisa dijalankan**; semantik
+> finalnya masih boleh dipertajam lewat `/grill-me` (issue F5-03/F5-04).

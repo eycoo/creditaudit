@@ -14,6 +14,12 @@ Reasoning length — the RQ2 knob — is controlled two ways: `mode` ("pendek"/
 "panjang") changes the prompt instruction, and `max_steps` caps how many parsed
 steps are kept. Sweeping these (see `experiments/exp2_rq2.py`) traces the
 grounding-vs-token curve.
+
+Two more knobs drive RQ3/RQ4 (`experiments/methods.py`): `prompt_style="prosa"`
+elicits free-prose reasoning with no operation format (the B1 / −operation-format
+baseline — 0 grounding by construction), and `lora_path` serves a fine-tuned LoRA
+adapter on top of the base model (method "Kami" / the −fine-tune contrast). A LoRA
+is applied per request, so base and LoRA methods share one loaded engine.
 """
 from __future__ import annotations
 
@@ -30,12 +36,26 @@ MODEL_DEFAULT = "Qwen/Qwen2.5-7B-Instruct"
 # model 4× and OOM. Keyed on the GPU-affecting config only.
 _ENGINE_CACHE: dict = {}
 
+# Stable unique int id per distinct LoRA adapter path — vLLM's LoRARequest needs
+# one. Base-model and LoRA methods sharing an `enable_lora` engine differ only by
+# the per-request LoRA, so the LoRA is NOT part of the engine cache key.
+_LORA_IDS: dict = {}
+
 _OPS = ", ".join(REGISTRY)  # canonical operation names for the prompt
 
 _SYSTEM = (
     "Anda penalar deret waktu yang teliti. Setiap klaim numerik HARUS berbentuk "
     "operasi dari pustaka yang diberikan, dihitung dari deret asli, sehingga bisa "
     "diverifikasi ulang. Jangan mengarang angka."
+)
+
+# Free-prose baseline (RQ3 B1 / RQ4 −operation-format): reasoning in plain natural
+# language, NO operation format — so nothing is machine-verifiable and grounding
+# falls to 0 by construction. A neutral system; the operation-form _SYSTEM would
+# contradict the prose instruction.
+_SYSTEM_PROSA = (
+    "Anda penalar deret waktu. Jelaskan penalaran Anda dengan ringkas dalam bahasa "
+    "alami, lalu beri jawaban akhir."
 )
 
 # Some instruct models (Gemma) ship a chat template that rejects a "system" role;
@@ -123,6 +143,28 @@ def build_prompt(sample: Sample, mode: str = "panjang", max_steps: int | None = 
     )
 
 
+_FORMAT_PROSA = (
+    "Jelaskan penalaran Anda dalam bahasa alami (prosa biasa), lalu akhiri dengan "
+    "tepat satu baris:\n"
+    "JAWABAN: <label>"
+)
+
+
+def build_prompt_prosa(sample: Sample, opsi: list[str] | None = None) -> str:
+    """Free-prose prompt (RQ3 B1 / RQ4 ablation): natural-language reasoning, **no**
+    operation format. Pure. The verifier finds no operation steps → grounding 0; the
+    final `JAWABAN:` line still lets answer accuracy be scored."""
+    opsi = answer_options(sample) if opsi is None else opsi
+    menu = f"JAWABAN harus **tepat satu** dari label ini: {', '.join(opsi)}.\n" if opsi else ""
+    return (
+        f"Deret: {sample.series.nama} (satuan {sample.series.satuan}, {sample.series.freq}).\n"
+        f"Konteks: {sample.konteks}\n"
+        f"nilai = {_fmt_series(sample)}\n"
+        f"Pertanyaan: {sample.pertanyaan}\n\n"
+        f"{menu}{_FORMAT_PROSA}"
+    )
+
+
 def _normalize_label(s: str) -> str:
     return s.strip().strip(".").lower()
 
@@ -203,6 +245,10 @@ class QwenVLLMAdapter:
         max_steps: int | None = None,
         max_tokens: int = 512,
         temperature: float = 0.0,
+        prompt_style: str = "operasi",
+        system: str | None = None,
+        lora_path: str | None = None,
+        lora_name: str = "penalar_ts",
         **llm_kwargs,
     ):
         self.model = model
@@ -210,11 +256,32 @@ class QwenVLLMAdapter:
         self.max_steps = max_steps
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.prompt_style = prompt_style  # "operasi" (LANGKAH format) | "prosa" (free prose)
+        self.system = system or (_SYSTEM_PROSA if prompt_style == "prosa" else _SYSTEM)
+        self.lora_path = lora_path  # fine-tuned adapter dir; None → base model
+        self.lora_name = lora_name
+        # Serving a LoRA: the engine must be built with enable_lora and a max rank
+        # ≥ the adapter's r (ours is 32; vLLM defaults to 16). Folding these into
+        # the engine kwargs means base-model and LoRA methods that pass the SAME
+        # kwargs (see experiments/methods.lora_engine_kwargs) land on ONE cached
+        # engine — the LoRA is selected per request, not per engine.
+        if lora_path:
+            llm_kwargs = {**llm_kwargs, "enable_lora": True,
+                          "max_lora_rank": max(32, int(llm_kwargs.get("max_lora_rank", 0)))}
         self._llm_kwargs = llm_kwargs
-        self.name = name or f"qwen2.5-7b:{mode}" + (f":<= {max_steps}" if max_steps else "")
+        self.name = name or self._default_name()
         self._llm = None
         self._SamplingParams = None
+        self._lora_req = None
         self.last_raw = ""  # last raw model text, for debug_dump.py
+
+    def _default_name(self) -> str:
+        base = f"qwen2.5-7b:{self.mode}" + (f":<= {self.max_steps}" if self.max_steps else "")
+        if self.prompt_style == "prosa":
+            base += ":prosa"
+        if self.lora_path:
+            base += ":lora"
+        return base
 
     def _ensure_llm(self):
         if self._llm is None:
@@ -233,15 +300,30 @@ class QwenVLLMAdapter:
             self._llm, self._SamplingParams = entry
         return self._llm
 
+    def _lora_request(self):  # pragma: no cover - needs vLLM
+        """LoRARequest for this adapter's fine-tuned weights, or None for the base
+        model. Cached; each distinct adapter path keeps a stable unique int id."""
+        if not self.lora_path:
+            return None
+        if self._lora_req is None:
+            from vllm.lora.request import LoRARequest  # lazy: only on the GPU path
+            lid = _LORA_IDS.setdefault(self.lora_path, len(_LORA_IDS) + 1)
+            self._lora_req = LoRARequest(self.lora_name, lid, self.lora_path)
+        return self._lora_req
+
     def _generate(self, prompt: str) -> str:  # pragma: no cover - needs GPU
         llm = self._ensure_llm()
         sp = self._SamplingParams(temperature=self.temperature, max_tokens=self.max_tokens)
-        convo = build_chat(self.model, _SYSTEM, prompt)
-        out = llm.chat(convo, sp)
+        convo = build_chat(self.model, self.system, prompt)
+        lreq = self._lora_request()
+        out = llm.chat(convo, sp, lora_request=lreq) if lreq is not None else llm.chat(convo, sp)
         return out[0].outputs[0].text
 
     def predict(self, sample: Sample) -> tuple[list[ReasoningStep], str]:
-        prompt = build_prompt(sample, mode=self.mode, max_steps=self.max_steps)
+        if self.prompt_style == "prosa":
+            prompt = build_prompt_prosa(sample)
+        else:
+            prompt = build_prompt(sample, mode=self.mode, max_steps=self.max_steps)
         text = self._generate(prompt)
         self.last_raw = text
         steps, label = parse_model_output(text)
