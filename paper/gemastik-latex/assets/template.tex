@@ -1,0 +1,243 @@
+%==============================================================================
+% Makalah Gemastik — Buletin Pagelaran Mahasiswa Nasional Bidang TIK
+% Judul: [ISI JUDUL DI SINI]
+% Kompilasi: pdflatex nama_file.tex   (jalankan 2x untuk referensi/label)
+%==============================================================================
+\documentclass[10pt,a4paper,twocolumn]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% Catatan: paket babel dengan opsi [indonesian] TIDAK dipakai di sini karena
+% banyak instalasi TeX Live (termasuk lingkungan Claude) tidak menyertakan
+% berkas bahasa indonesian.ldf secara default, yang membuat kompilasi gagal
+% total. Babel bahasa Indonesia hanya memengaruhi penomoran/nama otomatis
+% (mis. label caption bawaan), yang sudah kita override manual di bawah,
+% jadi tidak dibutuhkan secara fungsional.
+\usepackage{mathptmx}            % Times New Roman untuk teks & matematika
+\usepackage[scaled=0.92]{helvet} % Helvetica Type1 asli untuk judul/heading
+                                  % (JANGAN pakai \sffamily tanpa helvet: itu
+                                  % jatuh ke font bitmap Computer Modern Sans
+                                  % yang butuh generate metafont on-the-fly
+                                  % dan bisa GAGAL total di lingkungan tanpa
+                                  % akses tulis/metafont, termasuk di sini)
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{tikz}                % dipakai untuk kotak placeholder gambar
+\usepackage[a4paper,left=1.8cm,right=1.8cm,top=2.6cm,bottom=2.2cm,%
+            columnsep=0.7cm,headsep=0.5cm]{geometry}
+
+%------------------------------------------------------------------------------
+% Penomoran bagian: I., A. (gaya IEEE)
+%------------------------------------------------------------------------------
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\titleformat{\section}
+  {\normalfont\small\bfseries}{\thesection.}{0.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{1.4ex plus .3ex}{0.8ex}
+
+\titleformat{\subsection}
+  {\normalfont\small\bfseries\itshape}{\thesubsection.}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{1.2ex plus .2ex}{0.6ex}
+
+% Heading level 3 (subsubsection): italic, angka Arab + ")", konten paragraf baru
+\titleformat{\subsubsection}
+  {\normalfont\small\itshape}{\arabic{subsubsection})}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{1.0ex plus .2ex}{0.4ex}
+
+%------------------------------------------------------------------------------
+% Gaya caption
+%   - Gambar: label+judul DI BAWAH gambar (default LaTeX figure), Helvetica-ish
+%   - Tabel: label+judul DI ATAS tabel (default LaTeX table), Small Caps 8pt
+%------------------------------------------------------------------------------
+\captionsetup{font=small,labelsep=period,justification=centering}
+% Catatan: aturan resmi meminta label+judul tabel dalam "Small Caps".
+% Kombinasi shape sc + ukuran footnotesize memicu pembuatan font bitmap
+% on-the-fly (mktexpk) yang bisa GAGAL di lingkungan tanpa akses
+% tulis/metafont (termasuk lingkungan Claude ini). Untuk keandalan
+% kompilasi di semua lingkungan, judul tabel memakai footnotesize+bold
+% biasa alih-alih true small caps.
+\captionsetup[table]{font=footnotesize,labelfont=bf,skip=3pt}
+\captionsetup[figure]{font=small,skip=4pt}
+
+%------------------------------------------------------------------------------
+% Header banner + footer (wajib tampil di tiap halaman)
+%------------------------------------------------------------------------------
+\setlength{\headheight}{26pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.8pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{%
+  \footnotesize\bfseries BULETIN PAGELARAN MAHASISWA NASIONAL BIDANG TEKNOLOGI INFORMASI DAN KOMUNIKASI\\%
+  \mdseries\scriptsize ISSN: xxxxxx}
+% GANTI baris footer di bawah: empat kata pertama judul + nama ketua tim,
+% dan volume/nomor/bulan/tahun sesuai edisi yang berlaku.
+\fancyfoot[L]{\footnotesize Ketua Tim: Empat kata pertama judul makalah diikuti titik-titik (\ldots)}
+\fancyfoot[R]{\footnotesize Volume 1 Nomor 1 [Bulan] [Tahun]}
+
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{0pt}
+
+%------------------------------------------------------------------------------
+% Helper: kotak placeholder untuk gambar yang belum tersedia.
+% Pakai ini alih-alih \includegraphics kalau file gambar asli belum ada,
+% supaya PDF tetap bisa dikompilasi dan placeholder jelas terlihat.
+%
+% Pemakaian:
+%   \placeholderfig{width}{height}{Keterangan singkat isi gambar}
+% Contoh:
+%   \placeholderfig{0.9\linewidth}{4cm}{Diagram alur sistem: input -> model -> output}
+%------------------------------------------------------------------------------
+\newcommand{\placeholderfig}[3]{%
+  \begin{tikzpicture}
+    \draw[dashed, thick, gray] (0,0) rectangle (#1,#2);
+    \node[align=center, text width=0.9\dimexpr#1, font=\footnotesize\itshape, gray]
+      at (0.5*#1,0.5*#2) {[PLACEHOLDER GAMBAR]\\#3};
+  \end{tikzpicture}%
+}
+
+\begin{document}
+
+%==============================================================================
+% JUDUL, PENULIS, INTISARI (lebar penuh, di atas kolom ganda)
+%==============================================================================
+\twocolumn[{%
+\begin{@twocolumnfalse}
+\thispagestyle{fancy}
+\vspace{0.5em}
+\begin{center}
+  % JUDUL: maksimum 12 kata, Helvetica 20pt bold (mathptmx tidak punya
+  % Helvetica asli, \sffamily dipakai sebagai pendekatan visual terdekat)
+  {\LARGE\sffamily\bfseries [ISI JUDUL MAKALAH — MAKSIMUM 12 KATA]\par}
+  \vspace{1.2em}
+  % PENULIS: nama keluarga di akhir tiap nama; TANPA gelar/jabatan
+  {\normalsize\sffamily\bfseries Nama Ketua Tim\textsuperscript{1}, Nama Anggota 1\textsuperscript{2},
+   Nama Anggota 2\textsuperscript{3}, Nama Pembimbing\textsuperscript{4}\par}
+  \vspace{0.6em}
+  {\footnotesize
+   \textsuperscript{1}Nama Fakultas, Nama Institusi, Kota, Kodepos, Negara,
+   email: ketua@institusi.ac.id\\
+   \textsuperscript{2}Nama Fakultas, Nama Institusi, Kota, Kodepos, Negara,
+   email: anggota1@institusi.ac.id\\
+   \textsuperscript{3}Nama Fakultas, Nama Institusi, Kota, Kodepos, Negara,
+   email: anggota2@institusi.ac.id\\
+   \textsuperscript{4}Nama Fakultas, Nama Institusi, Kota, Kodepos, Negara\\[0.3em]
+   \textit{Corresponding Author}: Nama Ketua Tim\par}
+\end{center}
+\vspace{1.0em}
+
+{\small\justifying
+% INTISARI: 200-300 kata, 4 bagian wajib (pengantar ~1/4 bagian, tujuan,
+% metodologi singkat, penjelasan hasil), TANPA persamaan/tabel/sitasi.
+\noindent\textbf{\textit{INTISARI}} --- [Pengantar/latar belakang singkat...]
+[Tujuan penelitian...] [Metodologi singkat...] [Penjelasan hasil penelitian
+secara keseluruhan, sertakan angka konkret jika ada.]
+\par\vspace{0.7em}
+% KATA KUNCI: 4-8 kata, dipisah koma, tiap kata diawali huruf kapital.
+\noindent\textbf{KATA KUNCI:} Kata Kunci 1, Kata Kunci 2, Kata Kunci 3,
+Kata Kunci 4, Kata Kunci 5.
+\par}
+\vspace{1.5em}
+\end{@twocolumnfalse}
+}]
+
+%==============================================================================
+% ISI (dua kolom)
+%==============================================================================
+\justifying
+
+\section{Pendahuluan}
+% Tulis sebagai narasi mengalir: latar belakang -> masalah spesifik ->
+% kelemahan pendekatan sebelumnya (dengan sitasi) -> celah penelitian ->
+% kontribusi -> (opsional) rumusan masalah -> manfaat/dampak strategis.
+% Lihat references/common_juri_complaints.md poin 3 sebelum menulis ini.
+[ISI PENDAHULUAN]
+
+\section{Tinjauan Pustaka}
+% Atau "Kajian Teori" kalau perlu subsection per konsep dasar.
+% Pola tiap paragraf: "[Metode X] mencapai [metrik], namun [keterbatasan]
+% [sitasi]." lalu simpulkan celah di akhir bagian.
+[ISI TINJAUAN PUSTAKA]
+
+\section{Metodologi}
+
+\subsection{Dataset}
+% WAJIB konkret: sumber, metode akuisisi, timeframe, frekuensi, jumlah
+% baris/sampel, durasi pengumpulan, contoh satu baris data.
+[ISI DATASET — gunakan tabel seperti contoh di bawah jika lebih dari satu
+sumber data]
+
+\begin{table}[t]
+\centering
+\caption{Jenis Data, Variabel, dan Sumber Dataset}
+\label{tab:dataset}
+\footnotesize
+\begin{tabular}{@{}p{1.3cm}p{1.8cm}p{1.5cm}p{1.5cm}@{}}
+\toprule
+\textbf{Kategori} & \textbf{Variabel} & \textbf{Sumber} & \textbf{Frekuensi} \\
+\midrule
+{[Kategori]} & [Variabel] & [Sumber] & [Frekuensi] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Arsitektur/Metode Usulan}
+[ISI METODE, rujuk ke Gambar~\ref{fig:arsitektur} untuk diagram alur]
+
+\begin{figure}[t]
+\centering
+% Ganti \placeholderfig{...} dengan \includegraphics[width=0.92\linewidth]
+% {nama_file.png} setelah pengguna menyediakan gambar aslinya.
+\placeholderfig{7cm}{4cm}{Arsitektur sistem / diagram alur metode}
+\caption{[Judul gambar arsitektur/alur sistem].}
+\label{fig:arsitektur}
+\end{figure}
+
+\section{Hasil dan Diskusi}
+% Jika eksperimen belum lengkap, nyatakan status secara eksplisit di sini
+% (lihat references/common_juri_complaints.md poin 6). Jangan biarkan
+% ambigu apakah hasil sudah final atau belum.
+[ISI HASIL — setiap klaim angka harus merujuk ke tabel]
+
+\begin{table}[t]
+\centering
+\caption{[Judul Tabel Hasil]}
+\label{tab:hasil}
+\footnotesize
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Model/Skenario} & \textbf{Metrik 1} & \textbf{Metrik 2} & \textbf{Metrik 3} \\
+\midrule
+{[Baris 1]} & [Angka] & [Angka] & [Angka] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Kesimpulan}
+
+\subsection{Kesimpulan}
+[Rangkum hasil kuantitatif terkuat + jawab rumusan masalah/RQ jika ada]
+
+\subsection{Saran}
+[Rekomendasi konkret dan actionable untuk pekerjaan selanjutnya]
+
+%==============================================================================
+% REFERENSI (gaya IEEE, tanpa nomor heading, font 8pt)
+%==============================================================================
+\begin{thebibliography}{99}
+\footnotesize
+\bibitem{ref1}
+[Penulis], ``[Judul],'' \textit{[Nama Jurnal/Prosiding]}, [Tahun].
+
+\end{thebibliography}
+
+\end{document}

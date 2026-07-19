@@ -1,0 +1,611 @@
+%==============================================================================
+% Makalah Gemastik — Buletin Pagelaran Mahasiswa Nasional Bidang TIK
+% Judul: Peningkatan Keandalan dan Efisiensi Token LLM pada Data Time Series
+%        melalui Pendekatan Verifikasi Deterministik
+% Kompilasi: pdflatex 02_KrocoMasStanis.tex  (jalankan 2x untuk referensi)
+% Butuh berkas gambar: arsitektur_sistem.png (di folder yang sama)
+%==============================================================================
+\documentclass[10pt,a4paper,twocolumn]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage{mathptmx}            % Times New Roman untuk teks & matematika
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage[a4paper,left=1.8cm,right=1.8cm,top=2.6cm,bottom=2.2cm,%
+            columnsep=0.7cm,headsep=0.5cm]{geometry}
+
+%------------------------------------------------------------------------------
+% Penomoran bagian: I., A. (IEEE style)
+%------------------------------------------------------------------------------
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+
+\titleformat{\section}
+  {\normalfont\small\bfseries}{\thesection.}{0.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{1.4ex plus .3ex}{0.8ex}
+
+\titleformat{\subsection}
+  {\normalfont\small\bfseries\itshape}{\thesubsection.}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{1.2ex plus .2ex}{0.6ex}
+
+%------------------------------------------------------------------------------
+% Gaya caption
+%------------------------------------------------------------------------------
+\captionsetup{font=small,labelsep=period,justification=centering}
+\captionsetup[table]{font={footnotesize,sc},skip=3pt}
+\captionsetup[figure]{font=small,skip=4pt}
+
+%------------------------------------------------------------------------------
+% Header banner + footer
+%------------------------------------------------------------------------------
+\setlength{\headheight}{26pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.8pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{%
+  \footnotesize\bfseries BULETIN PAGELARAN MAHASISWA NASIONAL BIDANG TEKNOLOGI INFORMASI DAN KOMUNIKASI\\%
+  \mdseries\scriptsize ISSN: xxxxxx}
+\fancyfoot[L]{\footnotesize Ketua Tim: Empat kata pertama judul makalah diikuti titik-titik (\ldots)}
+\fancyfoot[R]{\footnotesize Volume 1 Nomor 1 September 2024}
+
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{0pt}
+
+\begin{document}
+
+%==============================================================================
+% JUDUL, PENULIS, INTISARI (lebar penuh)
+%==============================================================================
+\twocolumn[{%
+\begin{@twocolumnfalse}
+\thispagestyle{fancy}
+\vspace{0.5em}
+\begin{center}
+  {\LARGE\bfseries Peningkatan Keandalan dan Efisiensi Token LLM pada Data
+   Time Series melalui Pendekatan Verifikasi Deterministik\par}
+  \vspace{1.2em}
+  {\normalsize Ahmad Naufal Farras\textsuperscript{1}, Jeremy Mattathias
+   Mboe\textsuperscript{2}, Mochammad Henry Alifian\textsuperscript{3},
+   Dhany Arifianto\textsuperscript{4}\par}
+  \vspace{0.6em}
+  {\footnotesize
+   \textsuperscript{1}Fakultas Teknologi Elektro dan Informatika Cerdas,
+   Institut Teknologi Sepuluh Nopember, Surabaya, 60111,
+   email: 5054241038@student.its.ac.id\\
+   \textsuperscript{2}Fakultas Teknologi Elektro dan Informatika Cerdas,
+   Institut Teknologi Sepuluh Nopember, Surabaya, 60111,
+   email: 5054241021@student.its.ac.id\\
+   \textsuperscript{3}Fakultas Teknologi Elektro dan Informatika Cerdas,
+   Institut Teknologi Sepuluh Nopember, Surabaya, 60111,
+   email: 5054241024@student.its.ac.id\\
+   \textsuperscript{4}Fakultas Kedokteran dan Kesehatan,
+   Institut Teknologi Sepuluh Nopember, Surabaya, 60111\\[0.3em]
+   \textit{Corresponding Author}: Ahmad Naufal Farras\par}
+\end{center}
+\vspace{1.0em}
+
+{\small\justifying
+\noindent\textbf{\textit{INTISARI}} --- Model bahasa besar atau LLM unggul
+mengolah bahasa, tetapi lemah menalar atas angka. Karena itu model sering
+keliru ketika menganalisis data \textit{time series}, misalnya menyebut tren,
+lokasi lonjakan, atau besaran kenaikan yang tidak sesuai data, dengan kalimat
+yang terdengar meyakinkan. Kekeliruan seperti ini berisiko pada bidang
+bertaruh tinggi seperti kesehatan dan pangan. Penelitian ini mengusulkan
+sebuah pendekatan penalaran \textit{time series} yang \textit{grounded},
+artinya tiap langkah berpijak pada perhitungan atas deret asli, dan sekaligus
+hemat \textit{token}. Ada dua kontribusi. Pertama, sebuah \textit{dataset}
+penalaran \textit{time series} terverifikasi yang dibangun dari sumber publik
+nyata di Indonesia, yaitu harga pangan PIHPS Bank Indonesia, kasus penyakit
+Kementerian Kesehatan, cuaca BMKG, dan beban energi, lalu disimpan dalam
+format JSONL dengan lapisan penalaran yang tiap angkanya sudah dicek. Kedua,
+sebuah metode yang memasangkan LLM hasil \textit{fine-tune} kelas Qwen2.5-7B
+dengan verifikator deterministik berbasis NumPy di luar model. LLM menuliskan
+penalaran sebagai urutan operasi dari pustaka tetap, bukan prosa bebas, lalu
+verifikator menghitung ulang tiap operasi atas deret asli dan membandingkannya
+dengan angka yang diklaim memakai toleransi gabungan absolut dan relatif.
+Metrik utamanya adalah skor \textit{grounding}, yaitu persentase langkah
+penalaran yang angkanya tetap cocok saat dihitung ulang, dan dihitung tanpa
+LLM penilai. Pada uji awal, verifikator berhasil mereproduksi penalaran jujur
+atas deret kasus DBD mingguan dengan skor \textit{grounding} 100 persen, dan
+menurunkan skor menjadi 66,7 persen ketika satu langkah dibuat berhalusinasi,
+yaitu mengeklaim kenaikan 30 persen padahal 105 persen. Fondasi pustaka
+operasi, skema, dan verifikator sudah lolos 20 pengujian. Pembeda penelitian
+ini adalah penggabungan penalaran terverifikasi dan hemat \textit{token} pada
+data \textit{time series} yang dibangun sendiri.
+\par\vspace{0.7em}
+\noindent\textbf{KATA KUNCI:} Penalaran \textit{Time Series}, Skor
+\textit{Grounding}, Verifikator Deterministik, \textit{Chain-of-Thought},
+Efisiensi \textit{Token}, \textit{Fine-tuning} LLM, QLoRA, Penalaran
+Neuro-Simbolik, \textit{Data Mining}.
+\par}
+\vspace{1.5em}
+\end{@twocolumnfalse}
+}]
+
+%==============================================================================
+% ISI (dua kolom)
+%==============================================================================
+\justifying
+
+\section{Pendahuluan}
+Data \textit{time series} muncul di banyak keputusan penting, misalnya kasus
+penyakit tiap minggu, harga pangan tiap hari, dan beban listrik tiap jam.
+Selama ini pemakaian datanya lebih banyak diarahkan ke peramalan, yaitu
+menebak angka berikutnya. Padahal angka ramalan saja sering belum cukup untuk
+mengambil keputusan. Yang lebih dibutuhkan adalah tafsiran atas datanya,
+umpamanya menilai apakah kenaikan pada beberapa minggu terakhir menandakan
+wabah yang mulai terbentuk. Kemampuan menafsir semacam ini disebut penalaran,
+dan porsinya masih tertinggal dibanding peramalan~\cite{merrill2024}.
+
+Model bahasa besar dipakai sebagai antarmuka, tetapi lemah saat berhadapan
+dengan angka. Pada deret panjang, model cenderung menebak dari pola bahasa
+alih-alih menghitung, sehingga hasilnya bisa salah walau terdengar
+meyakinkan~\cite{merrill2024,mtbench2025}. Sebagai contoh, untuk deret kasus
+mingguan 12, 15, 11, 14, 13, 19, 25, 31, 29, 38, 45, 52, 61, 78 dengan
+pertanyaan apakah ada indikasi wabah, jawaban yang benar adalah ada. Nilai
+dasar pada awal deret sekitar 13 kasus, empat minggu terakhir naik dari 38 ke
+78 atau sekitar 105 persen, dan nilai akhirnya kira-kira enam kali nilai
+dasar. Pada kasus seperti ini model kerap keliru dalam tiga bentuk. Pertama,
+menutupi bahaya dengan menyimpulkan kasus stabil padahal sudah naik ke 78.
+Kedua, salah menunjuk lokasi lonjakan, umpamanya menyebut minggu semua padahal
+nilainya baru naik minggu 18. Ketiga, salah menaksir besaran, umpamanya
+menyebut kenaikan sekitar 30 persen padahal mencapai ratusan persen.
+
+Kekeliruan seperti itu berisiko karena kalimatnya tampak rapi. Pada bidang
+bertaruh tinggi seperti kesehatan dan pangan, jawaban tanpa alasan yang bisa
+diperiksa tidak layak dipercaya. Karena itu penalaran perlu bersifat
+\textit{grounded}, yaitu tiap langkahnya berpijak pada perhitungan atas deret
+dan bisa diperiksa ulang, sehingga orang dapat menelusuri jalan pikirannya
+sebelum bertindak. Pendekatan ini juga menyatukan dua hal yang selama ini
+terpisah, yaitu metode statistik yang bisa menghitung tetapi tidak
+menjelaskan, dan LLM yang bisa menjelaskan tetapi tidak menghitung.
+
+\subsection{Kesenjangan Penelitian}
+Penalaran atas \textit{time series} sedang ramai diteliti pada 2026, terlihat
+dari sejumlah naskah di ICLR 2026, revisi tolok ukur, dan survei
+khusus~\cite{mtbench2025,timeomni2026}. Ada pula temuan bahwa cara penalaran
+yang berhasil di soal matematika belum tentu bekerja pada deret
+waktu~\cite{merrill2024}. Arah penalaran yang lebih diverifikasi untuk
+\textit{time series} memang sudah mulai dikerjakan~\cite{veritime2026}, tetapi
+penalaran yang dibiarkan panjang dan boros \textit{token}~\cite{selfbudgeter2025}.
+Di sisi lain, riset penghematan \textit{token} lewat pengaturan panjang
+penalaran menurut tingkat kesulitan sudah berkembang, tetapi masih terbatas
+pada soal matematika~\cite{selfbudgeter2025}. Sampai sekarang belum ada yang
+menyatukan keduanya untuk \textit{time series}, dan belum ada \textit{dataset}
+penalaran \textit{time series} terverifikasi yang dibangun dari sumber lokal.
+Kami tidak mengeklaim bidang ini belum tersentuh, tetapi penggabungan penalaran
+terverifikasi dan hemat \textit{token} di atas data lokal buatan sendiri memang
+belum pernah dikerjakan.
+
+\subsection{Kontribusi}
+Penelitian ini memberi tiga kontribusi. Pertama, sebuah \textit{dataset}, yaitu
+korpus penalaran \textit{time series} terverifikasi dari sumber publik nyata di
+Indonesia, dalam format JSONL, dengan penalaran yang tiap langkahnya sudah dicek
+ke angka. Bagian ini menjadi kontribusi utama karena usaha membangun datanya
+terlihat jelas. Kedua, sebuah metode, yaitu pemasangan LLM hasil
+\textit{fine-tune} dengan verifikator deterministik di luar model, ditambah
+pengaturan panjang penalaran yang adaptif untuk menghemat \textit{token}.
+Ketiga, sebuah metrik, yaitu skor \textit{grounding} yang mengukur kejujuran
+penalaran terhadap angka dan dihitung tanpa LLM penilai. Kebaruannya bukan LLM,
+sebab LLM meminjam yang sudah ada lalu disetel ulang, melainkan pada data yang
+dibangun sendiri dan pada pasangan model dan verifikator yang membuat penalaran
+bisa diperiksa sekaligus hemat.
+
+\subsection{Rumusan Masalah}
+Empat pertanyaan penelitian diajukan. RQ1, seberapa sering model sekarang
+berhalusinasi saat menalar \textit{time series}, terlihat dari skor
+\textit{grounding} rendah meski jawaban kadang benar. RQ2, apakah metode kami
+menaikkan skor \textit{grounding} tanpa menurunkan akurasi jawaban. RQ3, apakah
+penalaran adaptif kami lebih hemat \textit{token} dibanding penalaran panjang
+pada akurasi setara. RQ4, komponen mana yang paling berpengaruh pada hasil.
+
+\section{Tinjauan Pustaka}
+
+\subsection{Penalaran atas Time Series}
+Model bahasa besar masih sulit menalar tanpa contoh tentang \textit{time
+series}, dan penalaran yang panjang tidak selalu menaikkan mutu analisis deret
+waktu~\cite{merrill2024}. Tolok ukur multimodal untuk penalaran temporal
+memperlihatkan model masih gagal ketika harus menggabungkan angka dan
+teks~\cite{mtbench2025}. Upaya ini mendorong penalaran yang lebih rumit atas
+\textit{time series} lewat pelatihan berbasis insentif~\cite{timeomni2026}.
+Kumpulan karya ini menunjukkan bidangnya aktif tetapi belum tuntas.
+
+\subsection{Chain-of-Thought dan Program-of-Thought}
+Memunculkan langkah penalaran antara terbukti menaikkan hasil pada tugas rumit,
+tetapi langkah itu tetap berupa prosa yang bisa salah hitung~\cite{cot2022}.
+Pemindahan komputasi ke penafsir program membuat jawaban dihitung alih-alih
+ditebak~\cite{pal2023}. Penelitian ini memakai semangat yang sama, yaitu LLM
+tidak pernah memegang angka, ia hanya mengusulkan operasi, dan program di luar
+model yang menghitung dan mengecek.
+
+\subsection{Penalaran Terverifikasi untuk Time Series}
+Arah yang paling dekat dengan penelitian ini menggarap penalaran \textit{time
+series} yang dapat diverifikasi melalui sintesis dan penjadwalan data berpikir,
+yang dikenal VeriTime~\cite{veritime2026}. Penelitian kami diletakkan langsung
+terhadap arah tersebut, dengan pembeda menggabungkan penalaran terverifikasi dan
+hemat \textit{token} serta membangun data sendiri dari konteks lokal. Klaim
+bahwa arah terverifikasi cenderung menghasilkan penalaran panjang dan mahal
+perlu dicek terhadap naskah aslinya sebelum dipakai sebagai poros pembeda.
+
+\subsection{Efisiensi Token dan Penalaran Adaptif}
+Panjang penalaran dapat dibuat hemat dan menyesuaikan tingkat kesulitan lewat
+pengaturan anggaran \textit{token}, meski sejauh ini terbatas pada soal
+matematika~\cite{selfbudgeter2025}. Penalaran panjang berbasis pembelajaran
+penguatan juga menjadi lazim setelah 2025~\cite{deepseekr1}. Gagasan anggaran
+adaptif itu kami pinjam dan bawa ke ranah \textit{time series}, yang belum
+pernah dilakukan.
+
+\subsection{Pelatihan Hemat Sumber Daya}
+Adaptasi peringkat rendah dan kuantisasi NF4 4-bit memungkinkan penyetelan model
+7B pada GPU kelas T4 atau V100~\cite{lora2022,qlora2023}. Untuk deret panjang,
+pendekatan penyandi bergaya \textit{reprogramming} dapat menjadi opsi
+tambahan~\cite{timellm2024}. Karena kekuatan proyek ada pada data dan
+\textit{grounding}, model kelas 7B seperti Qwen2.5 dinilai memadai tanpa perlu
+ukuran besar~\cite{qwen2024}.
+
+\section{Usulan Penelitian}
+Penelitian ini memisahkan tiga hal yang jangan tertukar, yaitu data sebagai
+bahan, metode sebagai cara membuat penalaran yang \textit{grounded} dan hemat,
+serta metrik sebagai alat ukur. Metodenya terdiri atas dua komponen berbeda
+sifat, yaitu komponen model berupa LLM yang disetel dan komponen berupa
+verifikator deterministik yang tidak dilatih. Posisi kami terhadap karya terkait
+diringkas pada Tabel~\ref{tab:posisi}. Celah yang kami ambil adalah penggabungan
+penalaran terverifikasi dan sekaligus hemat \textit{token} di atas data lokal.
+
+\begin{table}[t]
+\centering
+\caption{Posisi Penelitian Ini terhadap Karya Terkait}
+\label{tab:posisi}
+\footnotesize
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Karya} & \textbf{Terverifikasi} & \textbf{Hemat} & \textbf{\textit{Time}} & \textbf{Data} \\
+ & & \textbf{\textit{token}} & \textbf{\textit{series}} & \textbf{lokal} \\
+\midrule
+CoT / PoT \cite{cot2022,pal2023} & sebagian & tidak & tidak & -- \\
+SelfBudgeter \cite{selfbudgeter2025} & tidak & ya & tidak & -- \\
+VeriTime \cite{veritime2026} & ya & tidak & ya & tidak \\
+Usulan kami & ya & ya & ya & ya \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Metodologi}
+
+\subsection{Gambaran Sistem}
+Alur inti sistem berjalan sebagai berikut. LLM menerima deret angka beserta
+pertanyaan, lalu menuliskan penalaran dalam bentuk langkah beroperasi, bukan
+prosa bebas. Verifikator deterministik di luar model kemudian menghitung ulang
+tiap operasi atas deret asli dan mengecek angka yang diklaim cocok dalam
+toleransi. LLM yang menalar, program yang mengoreksi. Keduanya benda terpisah
+dan bekerja bersama, bukan program yang ditanam ke dalam LLM. Gambaran alur ini
+ada pada Gambar~\ref{fig:arsitektur}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{arsitektur_sistem.png}
+\caption{Arsitektur sistem: pemisahan komponen model (LLM penalar) dan komponen
+program (verifikator deterministik).}
+\label{fig:arsitektur}
+\end{figure}
+
+\subsection{Konstruksi Dataset}
+Deret angka diambil dari sumber publik nyata lewat \textit{scraping} atau API,
+jadi bukan \textit{dataset} siap pakai (Tabel~\ref{tab:sumber}). Untuk tiap
+deret, kami mengajukan pertanyaan, menghitung jawaban benar dengan rumus, lalu
+menyusun langkah penalaran yang tiap angkanya dicek ke deret. Langkah dibatasi
+pada pustaka operasi yang sudah ditetapkan agar tiap langkah bisa dihitung
+ulang. Untuk mencapai skala, sebagian besar data latih dibuat semi-sintetis,
+yaitu deret nyata atau deret terkendali yang dipasangkan dengan penalaran yang
+diperiksa otomatis, sedangkan data uji didominasi deret asli agar terbukti
+bekerja di lapangan. Pembagian dan distratifikasi menurut jenis tugas dan
+tingkat kesulitan, dan sumber pada data uji dijaga tidak muncul pada data latih
+supaya tidak bocor.
+
+\begin{table}[t]
+\centering
+\caption{Sumber Deret Publik yang Direncanakan}
+\label{tab:sumber}
+\footnotesize
+\begin{tabular}{@{}p{1.3cm}p{1.6cm}p{1.5cm}p{1.1cm}p{1.6cm}@{}}
+\toprule
+\textbf{Domain} & \textbf{Sumber} & \textbf{Metode akses} & \textbf{Frekuensi} & \textbf{Contoh variabel} \\
+\midrule
+Harga pangan & PIHPS Bank Indonesia & Scraping / API & Harian & Beras, cabai, minyak goreng \\
+Kesehatan & Dashboard Kemenkes & Scraping & Mingguan & Kasus DBD, ISPA, diare \\
+Cuaca & BMKG & API / scraping & Harian, jam & Suhu, curah hujan, kelembapan \\
+Energi & Sumber beban terbuka & API & Jam & Beban dan konsumsi listrik \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Skema JSONL dan Pustaka Operasi}
+Data disimpan sebagai JSONL, satu sampel per baris. Tiap sampel memuat empat
+bagian, yaitu deret berisi nama, satuan, frekuensi, dan konteks; pertanyaan;
+daftar penalaran yang tiap langkahnya berisi operasi, hasil yang diklaim, dan
+teks; serta jawaban berisi label dan tingkat keyakinan. Tiap langkah menamai
+satu operasi dari pustaka tetap pada Tabel~\ref{tab:operasi} agar bisa
+dijalankan ulang oleh verifikator. Operasi majemuk dapat disusun dari operasi
+dasar.
+
+\begin{table}[t]
+\centering
+\caption{Pustaka Operasi Dasar}
+\label{tab:operasi}
+\footnotesize
+\begin{tabular}{@{}>{\RaggedRight\arraybackslash}p{2.1cm}>{\RaggedRight\arraybackslash}p{2.2cm}>{\RaggedRight\arraybackslash}p{2.9cm}@{}}
+\toprule
+\textbf{Operasi} & \textbf{Arti} & \textbf{Contoh} \\
+\midrule
+rata2(rentang) & rata-rata atas rentang & rata2(nilai[0:5]) \\
+delta(a, b) & selisih dua titik & delta(nilai[0], nilai[15]) \\
+persen\_naik(a, b) & perubahan persen & persen\_naik(nilai[11], nilai[15]) \\
+rasio(a, b) & perbandingan dua nilai & rasio(nilai[15], baseline) \\
+slope(rentang) & kemiringan tren linear & slope(nilai[10:16]) \\
+min / max(rentang) & nilai ekstrem & max(nilai) \\
+z\_score(titik) & deviasi dalam simpangan baku & z\_score(nilai[15]) \\
+deteksi\_\allowbreak anomali(ambang) & titik melewati ambang & deteksi\_\allowbreak anomali(z=3) \\
+bandingkan\_\allowbreak segmen(r1, r2) & banding dua segmen & bandingkan\_\allowbreak segmen(\allowbreak nilai[0:8],\allowbreak{} nilai[8:15]) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Verifikator Deterministik dan Skor Grounding}
+Verifikator adalah program di luar LLM, ditulis dengan Python dan NumPy dan
+tidak dilatih. Program ini membaca \textit{string} operasi tiap langkah,
+menerjemahkan tokennya (nilai[a:b] menjadi irisan, nilai[i] menjadi satu elemen,
+angka menjadi literal, dan nama menjadi hasil langkah sebelumnya), menghitung
+ulang atas deret asli, lalu membandingkan hasilnya dengan angka yang diklaim.
+Satu langkah disebut \textit{grounded} bila memenuhi persamaan~\eqref{eq:grounded}.
+
+\begin{equation}
+\label{eq:grounded}
+\left| v_{\text{hitung}} - v_{\text{klaim}} \right|
+\le \max\!\left( \varepsilon_{\text{abs}},\;
+\varepsilon_{\text{rel}} \cdot \left| v_{\text{hitung}} \right| \right)
+\end{equation}
+
+dengan nilai bawaan kedua toleransi, absolut dan relatif, sama dengan 0,01. Suku
+relatif berperan sebagai penyetel kalibrasi. Suku ini membuat nilai tersaji
+105,3 tetap lolos terhadap hasil hitung ulang 105,26 yang hanya beda pembulatan,
+sementara salah besaran yang nyata, misalnya 30 lawan 105, tetap gagal. Skor
+\textit{grounding} atas sampel dihitung dengan persamaan~\eqref{eq:skor}.
+
+\begin{equation}
+\label{eq:skor}
+\text{Skor grounding} = \frac{n_{\text{grounded}}}{n_{\text{skalar}}} \times 100\%
+\end{equation}
+
+Langkah bukan skalar, misalnya deteksi\_anomali yang mengembalikan daftar indeks,
+untuk sementara tidak dihitung dalam skor skalar. Verifikator dipakai di tiga
+tempat, yaitu membersihkan label saat membangun data dengan membuang langkah
+yang gagal, menghitung skor \textit{grounding} saat evaluasi, dan secara
+opsional menjadi sinyal imbalan saat pelatihan.
+
+\subsection{Penalaran Adaptif}
+Panjang penalaran diatur menurut kesulitan. Deret dengan pola jelas cukup diberi
+penalaran pendek, sedangkan deret yang ambigu diberi penalaran panjang. Cara ini
+menekan jumlah \textit{token} tanpa menurunkan akurasi, mengikuti gagasan
+anggaran \textit{token} adaptif~\cite{selfbudgeter2025} yang kami bawa ke ranah
+\textit{time series}.
+
+\subsection{Protokol Pelatihan}
+Penyetelan memakai QLoRA 4-bit agar muat pada GPU T4 atau V100
+(Tabel~\ref{tab:latih}). Model kelas 7B dinilai cukup karena kekuatan proyek ada
+pada data dan \textit{grounding}. Sebagai perluasan opsional, pembelajaran
+penguatan dengan imbalan terverifikasi memberi nilai lebih bila langkah
+penalaran lolos pemeriksaan \textit{grounding}.
+
+\begin{table}[t]
+\centering
+\caption{Konfigurasi Pelatihan Kandidat}
+\label{tab:latih}
+\footnotesize
+\begin{tabular}{@{}p{1.8cm}p{2.0cm}p{1.4cm}p{1.6cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Nilai} & \textbf{Parameter} & \textbf{Nilai} \\
+\midrule
+Metode & QLoRA (NF4 4-bit) & Penjadwal & cosine + warmup \\
+Peringkat LoRA & 16 sampai 64 & Presisi & bf16 \\
+Alfa LoRA & 32 & Epoch & 2 sampai 3 \\
+Laju belajar & 1e-4 sampai 2e-4 & Kerangka & LLaMA-Factory, ZeRO-2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Hasil Awal dan Rancangan Eksperimen}
+Catatan penting. Penelitian masih pada Fase 1 atau fondasi. Bagian V.A sampai
+V.C melaporkan bukti kecil nyata dan bisa direproduksi dari verifikator,
+sedangkan bagian V.D dan V.E memaparkan rancangan eksperimen penuh yang akan
+dijalankan pada Fase 4 dan 5. Tidak ada angka hasil model terlatih yang diklaim
+pada draf ini.
+
+\subsection{Implementasi Fondasi}
+Empat modul inti sudah dibuat dan diuji, yaitu skema JSONL, pustaka operasi
+berbasis NumPy, verifikator, dan modul metrik. Seluruh fondasi lolos 20
+pengujian otomatis yang mencakup kebenaran tiap operasi, baca tulis JSONL
+bolak-balik, validasi skema, serta perhitungan skor \textit{grounding}.
+
+\subsection{Studi Kasus: Deteksi Wabah DBD}
+Untuk deret kasus DBD mingguan sebuah kabupaten selama 16 minggu pada
+Tabel~\ref{tab:dbd100}, penalaran jujur menyusun tiga langkah. Verifikator
+menghitung ulang tiap operasi atas deret asli lalu mencocokkannya dengan angka
+yang diklaim. Ketiganya \textit{grounded}, sehingga skor \textit{grounding}
+mencapai 100 persen dan menurunkan kesimpulan wabah dengan keyakinan tinggi.
+
+\begin{table}[t]
+\centering
+\caption{Reproduksi Penalaran Jujur, Skor Grounding 100 Persen}
+\label{tab:dbd100}
+\footnotesize
+\begin{tabular}{@{}cp{3.0cm}ccc@{}}
+\toprule
+\textbf{Lgk.} & \textbf{Operasi} & \textbf{Diklaim} & \textbf{Hitung ulang} & \textbf{Grounded} \\
+\midrule
+1 & rata2(nilai[0:5]) & 13,0 & 13,0 & ya \\
+2 & persen\_naik(nilai[11], nilai[15]) & 105,3 & 105,26 & ya \\
+3 & rasio(nilai[15], 13,0) & 6,0 & 6,0 & ya \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Validasi Deteksi Halusinasi}
+Untuk menguji apakah metrik menangkap kesalahan nyata, langkah kedua diubah
+menjadi klaim salah besaran, yaitu 30 persen padahal 105 persen. Verifikator
+menandai langkah itu tidak \textit{grounded} karena selisih 75,26 jauh
+melampaui toleransi pada persamaan~\eqref{eq:grounded}, sehingga skor
+\textit{grounding} turun menjadi 66,7 persen (Tabel~\ref{tab:dbd66}). Inilah
+metrik yang menjadi tulang punggung proyek, yaitu kejujuran penalaran terhadap
+angka yang dihitung tanpa LLM penilai.
+
+\begin{table}[t]
+\centering
+\caption{Deteksi Halusinasi Salah Besaran, Skor Grounding 66,7 Persen}
+\label{tab:dbd66}
+\footnotesize
+\begin{tabular}{@{}cp{3.0cm}ccc@{}}
+\toprule
+\textbf{Lgk.} & \textbf{Operasi} & \textbf{Diklaim} & \textbf{Hitung ulang} & \textbf{Grounded} \\
+\midrule
+1 & rata2(nilai[0:5]) & 13,0 & 13,0 & ya \\
+2 & persen\_naik(nilai[11], nilai[15]) & 30,0 & 105,26 & tidak \\
+3 & rasio(nilai[15], 13,0) & 6,0 & 6,0 & ya \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Rancangan Eksperimen Penuh}
+Empat eksperimen dirancang untuk menjawab RQ1 sampai RQ4. Pertama, uji
+halusinasi dasar dengan menguji model tanpa penyetelan pada tolok ukur kami
+untuk membuktikan skor \textit{grounding} rendah. Kedua, uji metode lawan
+pembanding untuk menunjukkan skor \textit{grounding} naik tanpa menurunkan
+akurasi. Ketiga, uji efisiensi dengan membandingkan \textit{token} penalaran
+adaptif lawan penalaran panjang pada akurasi setara. Keempat, uji ablasi dengan
+mematikan komponen satu per satu, yaitu verifikator saat pelatihan, penalaran
+adaptif, dan format beroperasi, untuk mengukur sumbangan tiap bagian.
+Pembandingnya meliputi LLM umum tanpa penyetelan yang menulis prosa bebas, LLM
+dengan penalaran panjang bergaya terverifikasi wakil arah
+VeriTime~\cite{veritime2026}, dan metode statistik murni sebagai batas atas
+hitungan tanpa penjelasan.
+
+\subsection{Metrik dan Hasil yang Diharapkan}
+Tiga metrik dipakai dan semuanya deterministik, yaitu akurasi jawaban berupa
+persentase label akhir yang benar, skor \textit{grounding} pada
+persamaan~\eqref{eq:skor} sebagai metrik utama, dan efisiensi \textit{token}
+berupa rata-rata \textit{token} per sampel yang dilaporkan bersama akurasi agar
+imbangnya terlihat. Hasil yang diharapkan meliputi \textit{dataset} penalaran
+\textit{time series} terverifikasi yang siap dipakai ulang, bukti bahwa model
+sekarang berskor \textit{grounding} rendah, bukti bahwa metode kami menaikkan
+\textit{grounding} tanpa menurunkan akurasi dan lebih hemat \textit{token},
+serta prototipe utuh yang bisa menjawab pertanyaan atas deret dengan penalaran
+yang bisa diperiksa.
+
+\section{Kesimpulan dan Saran}
+
+\subsection{Kesimpulan}
+Draf ini menetapkan fondasi sebuah pendekatan penalaran \textit{time series}
+yang memisahkan LLM penalar dari verifikator deterministik, dengan penalaran
+berbentuk operasi yang tiap angkanya bisa dihitung ulang. Fondasinya sudah
+terbukti pada studi kasus nyata. Verifikator mereproduksi penalaran jujur pada
+deret DBD dengan skor \textit{grounding} 100 persen dan menandai penalaran
+berhalusinasi dengan skor turun ke 66,7 persen, serta lolos 20 pengujian.
+Sumbangan untuk kompetisi data mining adalah data lokal terverifikasi yang usaha
+pembuatannya besar, dipasangkan dengan metode yang bisa diaudit dan hemat
+\textit{token}.
+
+\subsection{Saran dan Rencana Kerja}
+Pekerjaan berikutnya mengikuti enam fase, yaitu finalisasi pustaka operasi dan
+skema pada Fase 1, penarikan dari sumber publik pada Fase 2, sintesis dan
+verifikasi lapisan penalaran pada Fase 3, penyetelan model dan integrasi alur
+pada Fase 4, eksperimen serta ablasi dan evaluasi pada Fase 5, dan pembuatan
+prototipe serta penulisan laporan pada Fase 6. Titik paling menentukan ada di
+Fase 1 dan 3 karena pustaka operasi dan verifikasi label menentukan seluruh
+data. Risiko utama berupa tumpang tindih dengan VeriTime ditekan dengan
+menegaskan gabungan penalaran terverifikasi dan hemat \textit{token} serta data
+lokal buatan sendiri. Dari sisi etika, seluruh sumber bersifat publik, sistem
+diposisikan sebagai penunjang keputusan dan bukan nasihat medis atau finansial
+pribadi, dan penalaran yang \textit{grounded} justru mendukung
+pertanggungjawaban karena jejak hitungnya bisa ditelusuri.
+
+%==============================================================================
+% REFERENSI
+%==============================================================================
+\begin{thebibliography}{99}
+\footnotesize
+\bibitem{merrill2024}
+M. Merrill, M. Tan, V. Gupta, T. Hartvigsen, dan T. Althoff, ``Language Models
+Still Struggle to Zero-shot Reason about Time Series,'' dalam \textit{Findings
+of EMNLP}, 2024.
+
+\bibitem{mtbench2025}
+``MTBench: A Multimodal Time Series Benchmark for Temporal Reasoning and
+Question Answering,'' arXiv:2503.16858, 2025.
+
+\bibitem{veritime2026}
+``VeriTime: Time Series Reasoning via Process-Verifiable Thinking Data Synthesis
+and Scheduling for Tailored LLM Reasoning,'' arXiv:2602.07830, 2026.
+
+\bibitem{selfbudgeter2025}
+``SelfBudgeter: Adaptive Token Allocation for Efficient LLM Reasoning,''
+arXiv:2505.11274, 2025.
+
+\bibitem{timeomni2026}
+``TimeOmni-1: Incentivizing Complex Reasoning with Time Series in Large Language
+Models,'' dalam \textit{Proc. ICLR}, 2026.
+
+\bibitem{cot2022}
+J. Wei et al., ``Chain-of-Thought Prompting Elicits Reasoning in Large Language
+Models,'' dalam \textit{Proc. NeurIPS}, 2022.
+
+\bibitem{pal2023}
+L. Gao et al., ``PAL: Program-aided Language Models,'' dalam \textit{Proc.
+ICML}, 2023.
+
+\bibitem{lora2022}
+E. J. Hu et al., ``LoRA: Low-Rank Adaptation of Large Language Models,'' dalam
+\textit{Proc. ICLR}, 2022.
+
+\bibitem{qlora2023}
+T. Dettmers, A. Pagnoni, A. Holtzman, dan L. Zettlemoyer, ``QLoRA: Efficient
+Finetuning of Quantized LLMs,'' dalam \textit{Proc. NeurIPS}, 2023.
+
+\bibitem{deepseekr1}
+DeepSeek-AI, ``DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via
+Reinforcement Learning,'' arXiv:2501.12948, 2025.
+
+\bibitem{qwen2024}
+Qwen Team, ``Qwen2.5 Technical Report,'' arXiv:2412.15115, 2024.
+
+\bibitem{timellm2024}
+M. Jin et al., ``Time-LLM: Time Series Forecasting by Reprogramming Large
+Language Models,'' dalam \textit{Proc. ICLR}, 2024.
+
+\bibitem{llamafactory2024}
+Y. Zheng et al., ``LLaMA-Factory: Unified Efficient Fine-Tuning of 100+ Language
+Models,'' dalam \textit{Proc. ACL System Demonstrations}, 2024.
+
+\bibitem{bi2024}
+Bank Indonesia, ``Pusat Informasi Harga Pangan Strategis Nasional,'' tersedia di
+\url{https://www.bi.go.id/hargapangan}, diakses [tanggal].
+
+\bibitem{kemenkes}
+Kementerian Kesehatan RI, ``Dashboard Data Penyakit,'' tersedia di [URL],
+diakses [tanggal].
+
+\bibitem{bmkg}
+BMKG, ``Data Online Pusat Database BMKG,'' tersedia di
+\url{https://dataonline.bmkg.go.id}, diakses [tanggal].
+\end{thebibliography}
+
+\end{document}
